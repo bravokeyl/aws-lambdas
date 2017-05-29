@@ -1,2 +1,2 @@
-# iot.stackexchange.com
-Just IoT SE
+# AWS Lambdas
+Just lambdas
