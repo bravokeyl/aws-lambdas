@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>IoT SE</title>
+  </head>
+  <body>
+    <div class="users">
+      Count: <span id="count"></span>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      $( document ).ready(function() {
+        $.get("https://api.stackexchange.com/2.2/info?site=iot",function(res,err){
+          console.log(res);
+        });
+      });
+    </script>
+  </body>
+</html>

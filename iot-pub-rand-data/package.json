@@ -1,0 +1,15 @@
+{
+  "name": "iot-pub-rand-data",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "bravokeyl",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "aws-iot-device-sdk": "^1.0.14",
+    "aws-sdk": "^2.50.0"
+  }
+}
