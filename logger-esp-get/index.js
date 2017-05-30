@@ -19,11 +19,13 @@ exports.handler = function(event,context,cb) {
     console.log("Date Query String",event.params.querystring.date);
     var q1 = a.isValid();
 
-    var st,lt,channel,limit;
+    var st,lt,channel,limit,rSelect,cc,p,hk,rk;
     limit = 1;
+    rSelect = "ALL_ATTRIBUTES";
+    cc = "NONE";
     if( event.params.querystring.date ) {
       console.log("Date given");
-      st = (a.utc().valueOf())*10;
+      st = (a.utc().valueOf());
       lt = (parseInt(st)+ 86400000);
     } else {
       st = (moment(moment().format('YYYY-MM-DD')).utc().valueOf());
@@ -34,9 +36,22 @@ exports.handler = function(event,context,cb) {
     channel = "1";
     if(event.params.path.c) {
       channel = event.params.path.c;
+      hk = channel;
     }
     if(event.params.querystring.l){
       limit = parseInt(event.params.querystring.l);
+    }
+    if(event.params.querystring.select){
+      rSelect = "COUNT";
+    }
+    if(event.params.querystring.cc){
+      cc = "TOTAL";
+    }
+    if(event.params.querystring.p){
+      p = event.params.querystring.p;
+      // let pr = p.split(',');
+      // hk = pr[0];
+      rk = p;
     }
     const params = {
           "TableName": tableName,
@@ -52,9 +67,17 @@ exports.handler = function(event,context,cb) {
           },
           // 'ProjectionExpression' : 'host,powac,enac,utime',
           "ScanIndexForward": false,
+          "Select": rSelect,
+          "ReturnConsumedCapacity": cc,
           "Limit": limit
     };
 
+    if(hk & rk) {
+      params.ExclusiveStartKey = {
+        "host": hk.toString(),
+        "utime": parseInt(rk)
+      }
+    }
     docClient.query(params, function(err, data) {
         if (err) {
             console.error("Unable to read. Error JSON:", JSON.stringify(err, null, 2));
