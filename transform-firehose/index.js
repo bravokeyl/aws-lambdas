@@ -12,7 +12,7 @@ const putObject = function(data,dstKey) {
       Bucket: dstBucket,
       Key: dstKey,
       Body: data,
-      ContentType: 'application/json'
+      ContentType: 'text/plain'
   };
   s3.putObject(putParams,(err,data)=>{
     if(err) console.log(err,err.stack);
@@ -32,15 +32,26 @@ exports.handler = (event, context, callback) => {
       function(err, data) {
       if (err) console.log(err, err.stack);
       else {
-        let b = data.Body.toString();
-        let l = b.replace(/}/g,' ');
-        l = l.replace(/{/g,' ');
-        l = l.replace(/"data":/g,'');
-        l = l.replace(/\\n/g,'');
-        l = l.replace(/"/g,'');
-        l = l.split('e');
-        console.log("Pithre Formatted Data:",l);
-        putObject(JSON.stringify(l),objectKey);
+        let bs = data.Body.toString();
+        let b = bs.split('}');
+        let s3b = "Time,channel,V RMS,C RMS,V MOM,C MOM,V FUND,C FUND,V PERIOD,C PHASE SH,V SAG TIME,V SWELL TIME,C SWELL TIME,EN_ACT,EN_REACT,EN_APP,POW_ACT,POW_REACT,POW_APP,AHACC\n";
+        b.forEach((be,j)=>{
+          let l = be.replace(/{/g,'');
+          l = l.replace(/"data":/g,'');
+          l = l.replace(/"/g,'');
+          l = l.replace(/z\\n/g,'zzn');
+          l = l.split("zn");
+          l.forEach((e,i)=>{
+            if(e[0] == 'b') {
+              console.log(e,"Extracted line, first char is:",e[0]);
+              s3b += e+"\n";
+            } else {
+              console.log("First char is not 'b':",e[0])
+            }
+          });
+        });
+        console.log("Pithre Formatted Data:",s3b);
+        putObject(s3b,objectKey);
       }
     });
     callback(null, JSON.stringify("Success"));
