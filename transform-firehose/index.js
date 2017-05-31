@@ -34,19 +34,37 @@ exports.handler = (event, context, callback) => {
       else {
         let bs = data.Body.toString();
         let b = bs.split('}');
-        let s3b = "Time,channel,V RMS,C RMS,V MOM,C MOM,V FUND,C FUND,V PERIOD,C PHASE SH,V SAG TIME,V SWELL TIME,C SWELL TIME,EN_ACT,EN_REACT,EN_APP,POW_ACT,POW_REACT,POW_APP,AHACC\n";
+        let s3b = "Device,Timestamp,Ticks,Channel,V RMS,C RMS,Energy Active,Power Active,V MOM,C MOM,V FUND,C FUND,V PERIOD,C PHASE SH,V SAG TIME,V SWELL TIME,C SWELL TIME,EN_REACT,EN_APP,POW_REACT,POW_APP,AHACC\n";
         b.forEach((be,j)=>{
           let l = be.replace(/{/g,'');
           l = l.replace(/"data":/g,'');
           l = l.replace(/"/g,'');
           l = l.replace(/z\\n/g,'zzn');
           l = l.split("zn");
+          let s3tm = [];
           l.forEach((e,i)=>{
             if(e[0] == 'b') {
-              console.log(e,"Extracted line, first char is:",e[0]);
-              s3b += e+"\n";
+              // console.log(e,"Extracted line, first char is:",e[0]);
+              s3tm.push(e+"\n");
             } else {
-              console.log("First char is not 'b':",e[0])
+              let ptimestamp,pdevice;
+              // console.log("First char is not 'b': Record is: ",e);
+              let ps = e.split(',');
+              if(ps[1]) {
+                ptimestamp = ps[1].split(':');
+                ptimestamp = ptimestamp[1] || null;
+              }
+              if(ps[2]) {
+                pdevice = ps[2].split(':');
+                pdevice = pdevice[1] || null;
+              }
+              s3tm.forEach((se,si)=>{
+                s3tm[si] = pdevice+","+ptimestamp+","+se;
+                s3b += s3tm[si];
+                console.log("Line with timestamp and device",s3tm[si])
+              });
+              console.log("Accumulated data:",s3tm);
+              s3tm = [];
             }
           });
         });
