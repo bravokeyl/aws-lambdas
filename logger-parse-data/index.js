@@ -160,6 +160,9 @@ function extractData(msgArr, timestamp, deviceId){
           case 'c':
             c = p.slice(1);
             break;
+          case 't':
+            ticks = p.slice(1);
+            break;
           default:
         }
       });
