@@ -28,12 +28,14 @@ const s3ListObjetsHour = (callback) => {
   let params = {
     Bucket: srcBucket, /* required */
     Prefix: prefixBuck, /* required */
+    ContinuationToken: '1ADpvqzapxbEW7QB3MvIm+xCUnndin2fFzSLrM13mSyW+lkvEbShoMnETlctD+b4fCbKO4hZgmckmbMiSdUKKAQ=='
   };
   s3.listObjectsV2(params, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else{
       let tfiles = [];
-      console.log(data.Contents.length,"Length");
+      console.log(data.NextContinuationToken,"Length");
+      let nct = data.NextContinuationToken;
       data.Contents.forEach((e,i)=> {
         let key = e.Key.split('/');
         let f = key[key.length-1];
@@ -67,6 +69,15 @@ const s3ListObjetsHour = (callback) => {
         }
       }); // tfiles loop end
       console.log(output,"Length",output.length);
+      let pparams = {
+        Body: JSON.stringify(output),
+        Bucket: 'logger-hourly',
+        Key: 'bke'+Math.ceil(Math.random()*100000)
+     };
+      s3.putObject(pparams, function(err, data) {
+        if (err) console.log(err, err.stack); // an error occurred
+        else     console.log(data);           // successful response
+      });
     }
   });
 };
