@@ -24,18 +24,27 @@ const putObject = function(data,dstKey) {
   });
 };
 
-const s3ListObjetsHour = (callback) => {
+const s3ListObjetsHour = (token) => {
+  let nct = token || undefined;
+  console.log("NCT",nct);
   let params = {
     Bucket: srcBucket, /* required */
     Prefix: prefixBuck, /* required */
-    ContinuationToken: '1ADpvqzapxbEW7QB3MvIm+xCUnndin2fFzSLrM13mSyW+lkvEbShoMnETlctD+b4fCbKO4hZgmckmbMiSdUKKAQ=='
+    // ContinuationToken: '1ADpvqzapxbEW7QB3MvIm+xCUnndin2fFzSLrM13mSyW+lkvEbShoMnETlctD+b4fCbKO4hZgmckmbMiSdUKKAQ=='
   };
+
+  if(nct) {
+      params.ContinuationToken = nct;
+  }
+  console.log("Params",params);
   s3.listObjectsV2(params, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else{
       let tfiles = [];
-      console.log(data.NextContinuationToken,"Length");
-      let nct = data.NextContinuationToken;
+      let truncated = data.IsTruncated;
+      console.log(data.NextContinuationToken,"NCT", truncated, "Is truncated");
+      nct = data.NextContinuationToken;
+
       data.Contents.forEach((e,i)=> {
         let key = e.Key.split('/');
         let f = key[key.length-1];
@@ -51,7 +60,7 @@ const s3ListObjetsHour = (callback) => {
         }
         // console.log("UTC: ",m.format()," IST: ",ist.format('YYYY/MM/DD/HH')," Epoch ",moment().format('x'));
       }); // End loop
-      console.log(tfiles);
+      // console.log(tfiles);
       let output = [];
 
       tfiles.forEach(function(value) {
@@ -68,20 +77,43 @@ const s3ListObjetsHour = (callback) => {
           output.push(value);
         }
       }); // tfiles loop end
+
       console.log(output,"Length",output.length);
       let pparams = {
         Body: JSON.stringify(output),
         Bucket: 'logger-hourly',
-        Key: 'bke'+Math.ceil(Math.random()*100000)
-     };
+        Key: 'bke'+Math.ceil(Math.random()*100000000)
+      };
       s3.putObject(pparams, function(err, data) {
         if (err) console.log(err, err.stack); // an error occurred
         else     console.log(data);           // successful response
       });
+      if(truncated){
+        s3ListObjetsHour(nct);
+      }
     }
   });
 };
 
+const s3Copy = () => {
+  let fo = [];
+  fo.forEach((e)=>{
+    let pre = e.prefix;
+    e.key.forEach((l)=>{
+      let ckey = "/engdata/"+prefixBuck+"/"+l+".json";
+      console.log("Key:",ckey);
+      let cparams = {
+        Bucket: "logger-hourly",
+        CopySource: ckey,
+        Key: pre+"/"+l
+      };
+      s3.copyObject(cparams, function(err, data) {
+       if (err) console.log(err, err.stack); // an error occurred
+       else     console.log(data);           // successful response
+      });
+    }); // end key loop
+  });// end obj loop
+}
 exports.handler = (event, context, callback) => {
     console.log("Event:",event);
     console.log("S3 Env Bucket", process.env.S3_BUCKET)
@@ -95,5 +127,6 @@ exports.handler = (event, context, callback) => {
     //   }
     // });
     let len = s3ListObjetsHour();
+    // s3Copy();
     callback(null, JSON.stringify("Success"));
 };
