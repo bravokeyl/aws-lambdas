@@ -9,6 +9,7 @@ const docClient = new AWS.DynamoDB.DocumentClient({
   apiVersion: '2012-08-10'
 });
 const srcBucket = process.env.S3_BUCKET;
+const prefixBuck = process.env.S3_PREFIX;
 const dstBucket = 'logger-hourly';
 const putObject = function(data,dstKey) {
   const putParams = {
@@ -23,14 +24,16 @@ const putObject = function(data,dstKey) {
   });
 };
 
-const s3ListObjetsHour = () => {
+const s3ListObjetsHour = (callback) => {
   let params = {
     Bucket: srcBucket, /* required */
-    Prefix: 'esp/bad/esp8266_1645EF', /* required */
+    Prefix: prefixBuck, /* required */
   };
   s3.listObjectsV2(params, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else{
+      let tfiles = [];
+      console.log(data.Contents.length,"Length");
       data.Contents.forEach((e,i)=> {
         let key = e.Key.split('/');
         let f = key[key.length-1];
@@ -38,8 +41,32 @@ const s3ListObjetsHour = () => {
         let d = filename[0];
         let m = moment(parseInt(d));
         // console.log(e.Key,d,typeof d);
-        console.log("UTC: ",m.format()," IST: ",m.utcOffset(330).format()," Epoch ",moment().format('x'));
-      })
+        let ist = m.utcOffset(330);
+        let hkey = ist.format('YYYY/MM/DD/HH');
+        tfiles[i] = {
+          "prefix": hkey,
+          "key": d
+        }
+        // console.log("UTC: ",m.format()," IST: ",ist.format('YYYY/MM/DD/HH')," Epoch ",moment().format('x'));
+      }); // End loop
+      console.log(tfiles);
+      let output = [];
+
+      tfiles.forEach(function(value) {
+        var existing = output.filter(function(v, i) {
+          return v.prefix == value.prefix;
+        });
+        // console.log(existing);
+        if (existing.length) {
+          var existingIndex = output.indexOf(existing[0]);
+          output[existingIndex].key = output[existingIndex].key.concat(value.key);
+        } else {
+          if (typeof value.key == 'string')
+            value.key = [value.key];
+          output.push(value);
+        }
+      }); // tfiles loop end
+      console.log(output,"Length",output.length);
     }
   });
 };
@@ -47,9 +74,7 @@ const s3ListObjetsHour = () => {
 exports.handler = (event, context, callback) => {
     console.log("Event:",event);
     console.log("S3 Env Bucket", process.env.S3_BUCKET)
-    let bucketName = 'engdata';
-    let objectKey = '';
-    console.log("Pithre Bucket:",bucketName," key:",objectKey);
+    console.log("Pithre Bucket:",srcBucket," key:",prefixBuck);
     // s3.getObject( params,
     //   function(err, data) {
     //   if (err) console.log(err, err.stack);
@@ -58,6 +83,6 @@ exports.handler = (event, context, callback) => {
     //     putObject(bs,objectKey);
     //   }
     // });
-    s3ListObjetsHour();
+    let len = s3ListObjetsHour();
     callback(null, JSON.stringify("Success"));
 };
