@@ -12,10 +12,11 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 const dstBucket = process.env.S3_BUCKET;
 
 const putObject = function(data,dstKey) {
+  console.log(data,"Check",JSON.stringify(data));
   const putParams = {
       Bucket: dstBucket,
       Key: dstKey,
-      Body: data,
+      Body: JSON.stringify(data),
       ContentType: 'text/plain'
   };
   s3.putObject(putParams,(err,data)=>{
@@ -33,7 +34,7 @@ exports.handler = (event, context, callback) => {
     let m = moment(parseInt(timestamp));
     let ist = m.utcOffset(330);
     let hkey = ist.format('YYYY/MM/DD/HH');
-    let dstKey = hkey+'/'+timestamp;
-    putObject(event.toString(),dstKey);
+    let dstKey = deviceId+"/"+hkey+'/'+timestamp;
+    putObject(event,dstKey);
     callback(null, JSON.stringify("Success"));
 };
