@@ -12,7 +12,7 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 const srcBucket = process.env.S3_SRC_BUCKET;
 const dstBucket = process.env.S3_DST_BUCKET;
 const s3DeviceId = process.env.DEVICE_ID; // TODO: get this by lisiting objectsv2 S3
-const todayDate = moment().utcOffset(270).format('YYYY/MM/DD');
+const todayDate = moment().utcOffset(330).format('YYYY/MM/DD');
 
 const prefixBuck = s3DeviceId+"/"+todayDate;
 
@@ -63,8 +63,8 @@ const s3ListObjetsHour = (token) => {
       }); // End loop
       // console.log(tfiles);
 
-      dateHr = moment().utcOffset(270).format('YYYY-MM-DD')+"-"+hh;
-      dbDateHr = moment().utcOffset(270).format('YYYY/MM/DD');
+      dateHr = moment().utcOffset(330).format('YYYY-MM-DD')+"-"+hh;
+      dbDateHr = moment().utcOffset(330).format('YYYY/MM/DD');
       let pparams = {
         Body: JSON.stringify(tfiles),
         Bucket: dstBucket,
@@ -78,7 +78,7 @@ const s3ListObjetsHour = (token) => {
           TableName: 'logger-hourly',
           Item:{
               "deviceId": s3DeviceId,
-              "dateHr": moment().utcOffset(270).format('YYYY/MM/DD/HH');,
+              "dateHr": moment().utcOffset(330).format('YYYY/MM/DD/HH'),
               "size": size,
               "data": JSON.stringify(dbfiles),
           }
