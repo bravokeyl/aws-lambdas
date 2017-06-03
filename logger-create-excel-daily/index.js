@@ -65,11 +65,11 @@ const s3ListObjetsHour = (token) => {
         // console.log(tfiles);
 
         dateHr = moment().subtract(1,'d').format('YYYY-MM-DD')+"-"+hh;
-        dbDateHr = moment().subtract(1,'d').format('YYYY/MM/DD')+"/"+hh;
+        dbDateHr = moment().subtract(1,'d').format('YYYY/MM/DD');
         let pparams = {
           Body: JSON.stringify(tfiles),
           Bucket: dstBucket,
-          Key: dateHr
+          Key: s3DeviceId+'/'+dbDateHr+"/"+dateHr
         };
         s3.putObject(pparams, function(err, data) {
           if (err) console.log(err, err.stack); // an error occurred
