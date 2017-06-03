@@ -63,8 +63,8 @@ const s3ListObjetsHour = (token) => {
       }); // End loop
       // console.log(tfiles);
 
-      dateHr = moment().utcOffset(330).format('YYYY-MM-DD')+"-"+hh;
-      dbDateHr = moment().utcOffset(330).format('YYYY/MM/DD');
+      dateHr = moment().utcOffset(270).format('YYYY-MM-DD')+"-"+hh;
+      dbDateHr = moment().utcOffset(270).format('YYYY/MM/DD');
       let pparams = {
         Body: JSON.stringify(tfiles),
         Bucket: dstBucket,
@@ -78,8 +78,9 @@ const s3ListObjetsHour = (token) => {
           TableName: 'logger-hourly',
           Item:{
               "deviceId": s3DeviceId,
-              "dateHr": moment().utcOffset(330).format('YYYY/MM/DD/HH'),
+              "dateHr": moment().utcOffset(270).format('YYYY/MM/DD/HH'),
               "size": size,
+              "objects": dbfiles.length,
               "data": JSON.stringify(dbfiles),
           }
       };
