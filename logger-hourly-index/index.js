@@ -66,8 +66,8 @@ const s3ListObjetsHour = (token) => {
           let mn = moment(parseInt(filename));
           if(diff > 4) {
             diffObj.push({
-              "p": { 'ist': mp.utcOffset(270).format('YYYY-MM-DD HH:mm:ss'),'u': parseInt(dbfiles[i-1])},
-              "n": { 'ist': mn.utcOffset(270).format('YYYY-MM-DD HH:mm:ss'),'u': parseInt(filename)},
+              "p": { 'ist': mp.utcOffset(330).format('YYYY-MM-DD HH:mm:ss'),'u': parseInt(dbfiles[i-1])},
+              "n": { 'ist': mn.utcOffset(330).format('YYYY-MM-DD HH:mm:ss'),'u': parseInt(filename)},
               "d": diff
             });
           }
@@ -88,9 +88,10 @@ const s3ListObjetsHour = (token) => {
         else     console.log(data);           // successful response
       });
       let diffparams = {
-        Body: JSON.stringify(diffObj),
-        Bucket: dstBucket,
-        Key: s3DeviceId+'/'+dbDateHr+"/"+dateHr+"-diff"
+        "Body": JSON.stringify(diffObj),
+        "Bucket": 'logger-hourly-diff',
+        "Key": s3DeviceId+'/'+dbDateHr+"/"+dateHr+".diff",
+        "ContentType": 'application/json'
       };
       s3.putObject(diffparams, function(err, data) {
         if (err) console.log(err, err.stack); // an error occurred
