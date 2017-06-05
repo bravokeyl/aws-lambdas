@@ -46,6 +46,7 @@ const s3ListObjetsHour = (token) => {
     else{
       let tfiles = [];
       let dbfiles = [];
+      let diffObj = [];
       let dateHr;
       let dbDateHr;
       let truncated = data.IsTruncated;
@@ -59,10 +60,22 @@ const s3ListObjetsHour = (token) => {
         let filename = f[f.length-1];
         tfiles[i] = key;
         dbfiles[i] = filename;
+        if(i>0) {
+          let diff = parseInt(filename/1000)-parseInt(dbfiles[i-1]/1000);
+          let mp = moment(parseInt(dbfiles[i-1]));
+          let mn = moment(parseInt(filename));
+          if(diff > 4) {
+            diffObj.push({
+              "p": { 'ist': mp.utcOffset(270).format('YYYY-MM-DD HH:mm:ss'),'u': parseInt(dbfiles[i-1])},
+              "n": { 'ist': mn.utcOffset(270).format('YYYY-MM-DD HH:mm:ss'),'u': parseInt(filename)},
+              "d": diff
+            });
+          }
+        }
         size += e.Size;
       }); // End loop
       // console.log(tfiles);
-
+      console.log("Diff Obj:",diffObj);
       dateHr = moment().utcOffset(270).format('YYYY-MM-DD')+"-"+hh;
       dbDateHr = moment().utcOffset(270).format('YYYY/MM/DD');
       let pparams = {
@@ -71,6 +84,15 @@ const s3ListObjetsHour = (token) => {
         Key: s3DeviceId+'/'+dbDateHr+"/"+dateHr
       };
       s3.putObject(pparams, function(err, data) {
+        if (err) console.log(err, err.stack); // an error occurred
+        else     console.log(data);           // successful response
+      });
+      let diffparams = {
+        Body: JSON.stringify(diffObj),
+        Bucket: dstBucket,
+        Key: s3DeviceId+'/'+dbDateHr+"/"+dateHr+"-diff"
+      };
+      s3.putObject(diffparams, function(err, data) {
         if (err) console.log(err, err.stack); // an error occurred
         else     console.log(data);           // successful response
       });
