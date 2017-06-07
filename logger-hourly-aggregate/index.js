@@ -14,15 +14,16 @@ const s3DeviceId = process.env.DEVICE_ID; // TODO: get this by lisiting objectsv
 const putObject = function(data,dstKey) {
   const putParams = {
       Bucket: dstBucket,
-      Key: 'merged/'+dstKey+'.xls',
+      Key: 'aggregate/'+dstKey+'.agr',
       Body: data,
-      ContentType: 'application/vnd.ms-excel'
+      ContentType: 'application/json'
   };
+  console.log("PUT params",putParams);
   s3.putObject(putParams,(err,data)=>{
     if(err) console.log(err,err.stack);
-    console.log("Put object Success",data);
+    else console.log("Put object Success",data);
   });
-}
+};
 
 exports.handler = (event, context, callback) => {
     console.log("Event:",event);
@@ -62,15 +63,33 @@ exports.handler = (event, context, callback) => {
           }
         });
         console.log("Channels grouped",d);
+        let energyObj  = {};
         Object.keys(d).forEach((e,i)=>{
           let energy = 0;
-          console.log("Channel:",d[e][2]," length",d[e].length);
-          d[e].forEach((k,l)=>{
-            energy+= parseInt(k[3]);
+          let el = d[e].length;
+          let lt = 0;
+          let ft = 0;
+          console.log("Channel:",d[e][2]," length", el);
+          d[e].forEach((k,l)=> {
+            if( l === 0 ) {
+              ft = k[0];
+            }
+            if( l == (el-1) ) {
+              lt = k[0];
+            }
+            let ep = parseInt(k[3]);
+            if(isNaN(ep)) console.log("NaN:",k);
+            energy+= isNaN(ep) ? 0: ep;
           });
+          energyObj[e] = {
+            "energy": energy,
+            "timestamp": [ft,lt],
+            "records": el
+          };
           console.log("ENERGY for channel: ", e, " is:",energy);
         });
-
+        putObject(JSON.stringify(energyObj),objectKey);
+        console.log("Energy Object: ",JSON.stringify(energyObj));
         console.log(bss.length," length ");
       }
     });
