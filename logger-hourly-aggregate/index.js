@@ -57,21 +57,27 @@ exports.handler = (event, context, callback) => {
         bss.forEach((e,i)=> {
           let v = e.split(',');
           let ci = d[v[3]];
+          // console.log("CI:",ci,":V3",v[3]);
           if(ci){
-            let ea = [v[1],v[2],v[3],v[6]];
+            let ener = v[6].slice('1');
+            let tick = v[2].slice('2');
+            let cha = v[3].slice('1');
+            let ea = [v[1],tick,cha,ener];
             ci.push(ea);
+            // console.log("EA:",ea);
           }
         });
         console.log("Channels grouped",d);
         Object.keys(d).forEach((e,i)=>{
           let energy = 0;
-          console.log(d[e]);
+          console.log("Channel:",d[e][2]," length",d[e].length);
           d[e].forEach((k,l)=>{
             energy+= parseInt(k[3]);
           });
+          console.log("ENERGY for channel: ", e, " is:",energy);
         });
 
-        // console.log(bss.length," length ",bss);
+        console.log(bss.length," length ");
       }
     });
     callback(null, JSON.stringify("Success"));

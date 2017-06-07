@@ -226,7 +226,7 @@ exports.handler = (event, context, callback) => {
     } else {
       // Add partial messages to SQS
     }
-    console.log('Is Partial Message:', isPartialMessage, timestamp);
+    console.log('Partial Message:', isPartialMessage, timestamp);
     console.log(result);
 
     // let res = putDataToDB(result);
