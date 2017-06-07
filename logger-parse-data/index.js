@@ -6,7 +6,8 @@ const docClient = new AWS.DynamoDB.DocumentClient({
   region: 'us-east-1',
   apiVersion: '2012-08-10'
 });
-
+const QUEUE_URL = 'https://sqs.us-east-1.amazonaws.com/839763603522/logger-esp-sqs';
+const sqs = new AWS.SQS({region : 'us-east-1'});
 const tableName = 'iot-esp';
 
 function popuateItems(data,index){
@@ -225,10 +226,9 @@ exports.handler = (event, context, callback) => {
       let res = putDataToDB(extractedData);
     } else {
       // Add partial messages to SQS
-    }
+    } // end else
     console.log('Partial Message:', isPartialMessage, timestamp);
     console.log(result);
 
-    // let res = putDataToDB(result);
     callback(null, JSON.stringify(result));
 };

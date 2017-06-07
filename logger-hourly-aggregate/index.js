@@ -39,12 +39,6 @@ exports.handler = (event, context, callback) => {
       else {
         let bs = data.Body.toString();
         let bss = bs.split("z\n");
-        // let c1 = bss.filter((e)=>{
-        //   let ea = "["+e+"]";
-        //   console.log(typeof ea,"Channel:",ea[3]);
-        //   return ea[3] == "c1";
-        // });
-        // console.log(c1);
         let d = {
           "c1": [],
           "c2": [],
