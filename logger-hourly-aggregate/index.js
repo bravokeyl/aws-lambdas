@@ -64,6 +64,7 @@ exports.handler = (event, context, callback) => {
         });
         console.log("Channels grouped",d);
         let energyObj  = {};
+        let energyCObj = [];
         Object.keys(d).forEach((e,i)=>{
           let energy = 0;
           let el = d[e].length;
@@ -81,13 +82,16 @@ exports.handler = (event, context, callback) => {
             if(isNaN(ep)) console.log("NaN:",k);
             energy+= isNaN(ep) ? 0: ep;
           });
-          energyObj[e] = {
+          energyCObj.push({
+            "channel": e.slice('1'),
             "energy": energy,
             "timestamp": [ft,lt],
             "records": el
-          };
+          });
           console.log("ENERGY for channel: ", e, " is:",energy);
         });
+        energyObj.channels = energyCObj;
+        energyObj.total = bss.length;
         putObject(JSON.stringify(energyObj),objectKey);
         console.log("Energy Object: ",JSON.stringify(energyObj));
         console.log(bss.length," length ");
