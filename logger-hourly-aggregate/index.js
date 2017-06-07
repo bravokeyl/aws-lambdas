@@ -38,7 +38,40 @@ exports.handler = (event, context, callback) => {
       if (err) console.log(err, err.stack);
       else {
         let bs = data.Body.toString();
-        console.log(bs);
+        let bss = bs.split("z\n");
+        // let c1 = bss.filter((e)=>{
+        //   let ea = "["+e+"]";
+        //   console.log(typeof ea,"Channel:",ea[3]);
+        //   return ea[3] == "c1";
+        // });
+        // console.log(c1);
+        let d = {
+          "c1": [],
+          "c2": [],
+          "c3": [],
+          "c4": [],
+          "c5": [],
+          "c6": []
+        };
+
+        bss.forEach((e,i)=> {
+          let v = e.split(',');
+          let ci = d[v[3]];
+          if(ci){
+            let ea = [v[1],v[2],v[3],v[6]];
+            ci.push(ea);
+          }
+        });
+        console.log("Channels grouped",d);
+        Object.keys(d).forEach((e,i)=>{
+          let energy = 0;
+          console.log(d[e]);
+          d[e].forEach((k,l)=>{
+            energy+= parseInt(k[3]);
+          });
+        });
+
+        // console.log(bss.length," length ",bss);
       }
     });
     callback(null, JSON.stringify("Success"));

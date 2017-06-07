@@ -14,7 +14,7 @@ const s3DeviceId = process.env.DEVICE_ID; // TODO: get this by lisiting objectsv
 
 const formattoExcel = (bs,objectKey) => {
   let b = bs.split('}');
-  let s3b = "Device,Timestamp,Ticks,Channel,V RMS,C RMS,Energy Active,Power Active,V MOM,C MOM,V FUND,C FUND,V PERIOD,C PHASE SH,V SAG TIME,V SWELL TIME,C SWELL TIME,EN_REACT,EN_APP,POW_REACT,POW_APP,AHACC\n";
+  let s3b = "Device,Timestamp,Ticks,Channel,V RMS,C RMS,Energy Active,Power Active,V MOM,C MOM,V FUND,C FUND,V PERIOD,C PHASE SH,V SAG TIME,V SWELL TIME,C SWELL TIME,EN_REACT,EN_APP,POW_REACT,POW_APP,AHACCz\n";
   b.forEach((be,j)=>{
     let l = be.replace(/{/g,'');
     l = l.replace(/"data":/g,'');
