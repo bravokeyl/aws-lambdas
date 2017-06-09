@@ -36,7 +36,7 @@ exports.handler = (event, context, callback) => {
   const ISTtime = moment(timestamp).utcOffset(330).format('YYYY-MM-DD HH:mm:ss');
   const item = {
     device,
-    type: 'meta',
+    qtype: 'meta',
     timestamp,
     UTCtime,
     ISTtime,

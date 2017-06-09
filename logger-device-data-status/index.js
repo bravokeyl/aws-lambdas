@@ -31,13 +31,12 @@ exports.handler = (event, context, callback) => {
   // const device = event.device;
   // const timestamp = event.timestamp;
   const { device, timestamp } = event;
-  // // const timestamp = new Date(parseInt(utime, 10));
-  const deviceId = `${device}-data`;
+
   const UTCtime = moment(timestamp).format('YYYY-MM-DD HH:mm:ss');
   const ISTtime = moment(timestamp).utcOffset(330).format('YYYY-MM-DD HH:mm:ss');
   const item = {
-    device: deviceId,
-    type: 'data',
+    device,
+    qtype: 'data',
     timestamp,
     UTCtime,
     ISTtime,
