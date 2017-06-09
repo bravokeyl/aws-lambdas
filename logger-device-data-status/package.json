@@ -1,0 +1,15 @@
+{
+  "name": "logger-device-data-status",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "bravokeyl",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb-base": "^11.2.0",
+    "eslint-plugin-import": "^2.3.0"
+  },
+  "dependencies": {
+    "moment": "^2.18.1"
+  }
+}
