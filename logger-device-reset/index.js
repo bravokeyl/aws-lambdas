@@ -39,7 +39,7 @@ exports.handler = (event, context, cb) => {
         const rt = items[0].timestamp;
         const diff = a - rt;
         console.log('Diff time:', diff);
-        if (parseInt(diff, 10) > 1000) {
+        if (parseInt(diff, 10) > 10000) {
           // SNS
           const sdata = {
             data: items,

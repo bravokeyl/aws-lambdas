@@ -2,7 +2,7 @@
 /* eslint-disable */
 const AWS = require('aws-sdk');
 /* eslint-enable */
-
+const s3 = new AWS.S3();
 const moment = require('moment');
 
 const ses = new AWS.SES({
@@ -19,6 +19,21 @@ exports.handler = (event, context, cb) => {
     msg = JSON.parse(snsMsg).data;
     console.log('SNS:', msg);
   }
+
+  s3.getObject({
+    Bucket: 'logger-alerts',
+    Key: 'preset.html',
+  }, (err, data) => {
+    if (err) {
+        // Error
+      console.log(err, err.stack);
+      cb(null, 'Internal Error: Failed to load template from s3.');
+    } else {
+      const templateBody = data.Body.toString();
+      console.log('Template Body: ', templateBody);
+    }
+  });
+
   const sesParams = {
     Destination: {
       ToAddresses: [
