@@ -1,0 +1,10 @@
+{
+  "name": "serial-test",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "author": "bravokeyl",
+  "dependencies": {
+    "serialport": "^4.0.7"
+  }
+}
