@@ -1,8 +1,8 @@
 #!/bin/bash
 # https://pyz1xbouqb.execute-api.us-east-1.amazonaws.com/l/h?dhr=
-for number in 14
+for number in 13
 do
-  dat="2017/10/02/"$number
+  dat="2017/10/27/"$number
   echo $dat
   pay='{"params":{"querystring":{"dhr":"';
   a='"}}}';

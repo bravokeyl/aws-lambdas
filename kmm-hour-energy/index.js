@@ -145,6 +145,7 @@ function checkDataReset(d) {
       }
       if(i == (p.length-1)) {
         let end = getDefinedValues(p,i,initial,-1);
+        console.log(initial,end,"DHDHH");
         let db = (end-initial)/1000000;
         db = isNaN(db) ? 0 : db;
         o[c].push(db);
