@@ -89,10 +89,9 @@ function getDefinedValues(d,index,initial,order){
   let start = initial;
   if(index>0){
     if(d[index].energy && d[index].energy>0 && d[index].power) {
-      if(d[index].energy > start) {
+      if((d[index].energy-start) > 0) {
         return d[index].energy;
       } else {
-        console.log("Something wrong: Initial energy > end energy even if ticks are good and no reset");
         return getDefinedValues(d,(index+order),start,order)
       }
     } else {
@@ -145,7 +144,6 @@ function checkDataReset(d) {
       }
       if(i == (p.length-1)) {
         let end = getDefinedValues(p,i,initial,-1);
-        console.log(initial,end,"DHDHH");
         let db = (end-initial)/1000000;
         db = isNaN(db) ? 0 : db;
         o[c].push(db);
