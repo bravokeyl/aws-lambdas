@@ -14,6 +14,16 @@ const srcBucket = process.env.S3_SRC_BUCKET;
 const dstBucket = process.env.S3_DST_BUCKET;
 const todayDate = moment().format('YYYY/MM/DD');
 const device = process.env.DEVICE_ID; //"esp8266_1ACD99";
+const columnLength = process.env.COL_LENGTH || 20;
+const currLogLevel = process.env.LOG_LEVEL !== null ? process.env.LOG_LEVEL : 'error';
+
+const logLevels = {error: 4, warn: 3, info: 2, verbose: 1, debug: 0};
+function bklog(logLevel, statement) {
+    if(logLevels[logLevel] >= logLevels[currLogLevel] ) {
+        console.log(statement);
+    }
+}
+
 function putDataToDB(en,device,hour){
   var params = {
         TableName : putTableName,
@@ -41,6 +51,10 @@ function channelSplit(d,sep){
 }
 function extractChannels(d) {
   let darr = channelSplit(d.data,'z\n');
+  if(darr.length != 7) {
+    bklog("warn","Channels length not equal to 6, length is: " + (darr.length-1));
+    bklog("info","Check this Data: "+d.data);
+  }
   return darr;
 }
 function singleChannel(data) {
@@ -48,7 +62,11 @@ function singleChannel(data) {
   let c,pow,en,v,irms,ticks;
   data = [];
   let c1 = [];
-  if(d.length>0) {
+  if( d.length != columnLength ) {
+    bklog("warn","Channel column length not equal to 20, length is: "+d.length);
+    bklog("info","Check this Data: "+d);
+  }
+  if(d.length>0 && (d.length == columnLength)) {
     d.forEach((p,j) => {
       let fc = p.charAt(0);
       // Discard all other data except required
@@ -92,10 +110,10 @@ function getDefinedValues(d,index,initial,order){
       if((d[index].energy-start) > 0) {
         return d[index].energy;
       } else {
-        return getDefinedValues(d,(index+order),start,order)
+        return getDefinedValues(d,(index+order),start,order);
       }
     } else {
-      return getDefinedValues(d,(index+order),start,order)
+      return getDefinedValues(d,(index+order),start,order);
     }
   }
 }
@@ -144,6 +162,7 @@ function checkDataReset(d) {
       }
       if(i == (p.length-1)) {
         let end = getDefinedValues(p,i,initial,-1);
+        console.log("End: ", end," Initial: ",initial);
         let db = (end-initial)/1000000;
         db = isNaN(db) ? 0 : db;
         o[c].push(db);
@@ -168,7 +187,7 @@ function getHourEnergy(items) {
     "4": 0,
     "5": 0,
     "6": 0,
-  }
+  };
 
   items.forEach(function(e,i){
     let channels = extractChannels(e);
@@ -254,7 +273,7 @@ exports.handler = function(event,context,cb) {
               device: device,
               hour: st
             };
-            var res = Object.assign({},hourEnergy,extraObj)
+            var res = Object.assign({},hourEnergy,extraObj);
             cb(null,res);
         }
 
