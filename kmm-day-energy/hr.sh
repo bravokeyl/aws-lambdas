@@ -1,6 +1,6 @@
 #!/bin/bash
 # https://pyz1xbouqb.execute-api.us-east-1.amazonaws.com/l/h?dhr=
-for number in 29
+for number in 31
 do
   dat='2017/10/'$number
   echo $dat

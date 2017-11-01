@@ -23,10 +23,11 @@ exports.handler = function(event,context,cb) {
       ddm = true;
       st = event.params.querystring.ddm;
       console.log("MonthDate String",event.params.querystring.ddm);
+      limit = moment(st,"YYYY/MM").utcOffset("+05:30").daysInMonth();
       kce = 'device = :device and begins_with(ddt,:st)';
-      limit = 30;
     } else {
       ddm = false;
+      limit = moment().utcOffset("+05:30").daysInMonth();
     }
 
     if(event.params && event.params.querystring && event.params.querystring.ddt){
@@ -39,7 +40,7 @@ exports.handler = function(event,context,cb) {
       }
     }
 
-    console.log("ST:",st);
+    console.log("ST:",st,"Limit",limit);
 
     if(event.params){
       if(event.params.querystring.select){
