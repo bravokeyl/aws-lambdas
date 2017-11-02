@@ -217,8 +217,7 @@ exports.handler = function(event,context,cb) {
       st = event.params.querystring.dhr;
       console.log("Date Query String",event.params.querystring.dhr);
     } else {
-      var a = moment().utc().format('x').valueOf();
-      st = moment(Number(a)+270*60*1000).format('YYYY/MM/DD/HH');
+      st = moment().utcOffset("+05:30").format('YYYY/MM/DD/HH');
     }
     console.log("ST:",st);
 
