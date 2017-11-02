@@ -84,7 +84,7 @@ exports.handler = function(event,context,cb) {
       st = event.params.querystring.dhr;
       console.log("Date Query String",event.params.querystring.dhr);
     } else {
-      // st = moment().utcOffset("+05:30").subtract(1, "days").format('YYYY/MM/DD');
+      st = moment().utcOffset("+05:30").format('YYYY/MM/DD');
     }
     console.log("ST:",st);
 

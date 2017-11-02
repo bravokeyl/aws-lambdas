@@ -74,8 +74,8 @@ exports.handler = function(event,context,cb) {
                 "capacity": data.ConsumedCapacity
               }
             }
-            let returnData = data.Items[0];
-            if(data.Items.length > 1) {
+            let returnData = {};
+            if(data.Items.length > 0) {
               returnData = {
                 energy: data.Items
               };
