@@ -14,12 +14,15 @@ const device = process.env.DEVICE_ID; //"esp8266_1ACD99";
 
 exports.handler = function(event,context,cb) {
     var sd,lt,channel,limit,cc;
-    limit = 31;
+    limit = 12;
     cc = "NONE";
     channel = "1";
     let kce = 'device = :device and  begins_with(ddm,:sd)';
     let stdate = moment().utcOffset("+05:30").format("YYYY/");
-
+    if(event.params && event.params.querystring && event.params.querystring.ddm){
+      stdate = event.params.querystring.ddm;
+      console.log("Year Query String",stdate);
+    }
     console.log("SD:",stdate,"Limit",limit,"KeyCond",kce);
 
     const params = {
