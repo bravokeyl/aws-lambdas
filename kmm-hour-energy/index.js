@@ -24,19 +24,19 @@ function bklog(logLevel, statement) {
     }
 }
 
-function putDataToDB(en,device,hour){
+function putDataToDB(en,device,hour,updatedAt){
   var params = {
         TableName : putTableName,
         Item:{
           "device": device,
           "dhr": hour,
-          // "energy": en,
           "c1": en[1],
           "c2": en[2],
           "c3": en[3],
           "c4": en[4],
           "c5": en[5],
           "c6": en[6],
+          "updatedAt": updatedAt
         }
     };
   docClient.put(params, function(err, res) {
@@ -162,7 +162,7 @@ function checkDataReset(d) {
       }
       if(i == (p.length-1)) {
         let end = getDefinedValues(p,i,initial,-1);
-        console.log("End: ", end," Initial: ",initial);
+        //console.log("End: ", end," Initial: ",initial);
         let db = (end-initial)/1000000;
         db = isNaN(db) ? 0 : db;
         o[c].push(db);
@@ -264,10 +264,12 @@ exports.handler = function(event,context,cb) {
               "5": 0,
               "6": 0,
             };
+            let updatedAt = 0;
             if(data.Items.length > 0) {
               hourEnergy = getHourEnergy(data.Items);
+              updatedAt = data.Items[data.Items.length-1].timestamp || 0;
             }
-            putDataToDB(hourEnergy,device,st);
+            putDataToDB(hourEnergy,device,st,updatedAt);
             var extraObj = {
               device: device,
               hour: st
