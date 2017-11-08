@@ -12,7 +12,22 @@ const tableName = process.env.SRC_DDB;
 const todayDate = moment().format('YYYY/MM/DD');
 const device = process.env.DEVICE_ID; //"esp8266_1ACD99";
 
+const getDevice = (event) => {
+  let system = false;
+  if(event && event.params && event.params.path && event.params.path.device) {
+    if(event.params.path.device.length == 6) {
+      system = "esp8266_"+event.params.path.device;
+    }
+  }
+  return system;
+}
 exports.handler = function(event,context,cb) {
+    console.log(event);
+    let system = getDevice(event);
+    if(!system){
+      cb(null,{"statusCode":"403","message":"Wrong system"});
+      return;
+    }
     var st,lt,channel,limit,rSelect,cc,p,hk,rk,ddt,ddm;
     limit = 1;
     rSelect = "ALL_ATTRIBUTES";
@@ -55,7 +70,7 @@ exports.handler = function(event,context,cb) {
           "TableName": tableName,
           "KeyConditionExpression" : kce,
           "ExpressionAttributeValues": {
-              ":device": device,
+              ":device": system,
               ":st": st,
           },
           "ScanIndexForward": false,
