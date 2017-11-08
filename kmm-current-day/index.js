@@ -18,12 +18,13 @@ function putDataToDB(en,device,date){
         Item:{
           "device": device,
           "ddt": date,
-          "c1": Number(parseFloat(en["c1"]).toFixed(2)),
-          "c2": Number(parseFloat(en["c2"]).toFixed(2)),
-          "c3": Number(parseFloat(en["c3"]).toFixed(2)),
-          "c4": Number(parseFloat(en["c4"]).toFixed(2)),
-          "c5": Number(parseFloat(en["c5"]).toFixed(2)),
-          "c6": Number(parseFloat(en["c6"]).toFixed(2)),
+          "c1": Number(parseFloat(en["c1"]).toFixed(3)),
+          "c2": Number(parseFloat(en["c2"]).toFixed(3)),
+          "c3": Number(parseFloat(en["c3"]).toFixed(3)),
+          "c4": Number(parseFloat(en["c4"]).toFixed(3)),
+          "c5": Number(parseFloat(en["c5"]).toFixed(3)),
+          "c6": Number(parseFloat(en["c6"]).toFixed(3)),
+          "updatedAt": moment().utcOffset("+05:30").format('x')
         }
     };
   docClient.put(params, function(err, res) {
