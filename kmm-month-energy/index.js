@@ -24,6 +24,7 @@ function putDataToDB(en,device,month){
           "c4": Number(parseFloat(en["c4"]).toFixed(2)),
           "c5": Number(parseFloat(en["c5"]).toFixed(2)),
           "c6": Number(parseFloat(en["c6"]).toFixed(2)),
+          "updatedAt": moment().utcOffset("+05:30").format('x'),
         }
     };
   docClient.put(params, function(err, res) {

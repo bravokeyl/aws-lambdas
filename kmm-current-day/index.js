@@ -128,7 +128,7 @@ exports.handler = function(event,context,cb) {
             };
             var res = {};
             if(data.Items.length > 0) {
-              let lastReported = data.Items[0].updatedAt || 0;
+              let lastReported = data.Items[0].lastReported || 0;
               dayEnergy = energySumByChannel(data.Items);
               putDataToDB(dayEnergy,device,st,lastReported);
             }

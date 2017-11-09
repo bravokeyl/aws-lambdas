@@ -1,16 +1,15 @@
 #!/bin/bash
-# https://pyz1xbouqb.execute-api.us-east-1.amazonaws.com/l/h?dhr=
-for number in 31
+for number in {09..11}
 do
-  dat='2017/10/'$number
+  dat='2017/'$number
   echo $dat
-  pay='{"params":{"querystring":{"dhr":"';
+  pay='{"params":{"querystring":{"ddm":"';
   a='"}}}';
   b=$pay"${dat}"$a
   echo $b
-  aws lambda invoke --function-name kmm-day-energy --payload $b "a.json"
+  aws lambda invoke --function-name kmm-month-energy --payload $b "a.json"
   echo " "
-  read -p "Continuing in 2 Seconds...." -t 2
+  read -p "Continuing in 5 Seconds...." -t 5
   echo "Continuing ...."
 done
 exit 0
