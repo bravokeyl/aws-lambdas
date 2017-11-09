@@ -36,7 +36,8 @@ function putDataToDB(en,device,hour,updatedAt){
           "c4": en[4],
           "c5": en[5],
           "c6": en[6],
-          "updatedAt": updatedAt
+          "updatedAt": moment().utcOffset("+05:30").format('x'),
+          "lastReported": updatedAt
         }
     };
   docClient.put(params, function(err, res) {
