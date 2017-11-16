@@ -1,3 +1,4 @@
 node_modules/
 *.zip
 a.json
+sam-local-test/
