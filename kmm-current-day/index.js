@@ -43,7 +43,7 @@ function enCheck(e,c) {
 
 function sumChannelEnergy(arr){
   if(Array.isArray(arr)) {
-    let redArr = arr.reduce((a,b)=> { return a+b; });
+    let redArr = arr.reduce((a,b)=> { return a+b; },0);
     return redArr;
   } else {
     console.log("Not an array",arr);
@@ -139,6 +139,5 @@ exports.handler = function(event,context,cb) {
             res = Object.assign({},dayEnergy,extraObj);
             cb(null,res);
         }
-
    });
 };
