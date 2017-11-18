@@ -15,7 +15,7 @@ function putDataToDB(event){
         TableName : putTableName,
         Item:{
           "device": clientId,
-          "q": createdAt,
+          "q": createdAt+"-"+eventType,
           "eventType": eventType,
           "clientInitiatedDisconnect": clientInitiatedDisconnect || "NA",
           "sessionIdentifier": sessionIdentifier,
@@ -32,5 +32,6 @@ function putDataToDB(event){
 }
 
 exports.handler = function(event,context,cb) {
+    console.log("Event: ",event);
     putDataToDB(event);
 };
