@@ -15,7 +15,7 @@ function putDataToDB(event){
         TableName : putTableName,
         Item:{
           "device": clientId,
-          "q": createdAt+"-"+eventType,
+          "q": createdAt+"-"+Math.random(),
           "eventType": eventType,
           "clientInitiatedDisconnect": clientInitiatedDisconnect || "NA",
           "sessionIdentifier": sessionIdentifier,
