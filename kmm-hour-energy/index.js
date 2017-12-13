@@ -108,7 +108,7 @@ function singleChannel(data) {
 function getDefinedValues(d,index,initial,order){
   let start = initial;
   if(index>0){
-    if(d[index].energy && d[index].energy>0 && d[index].power) {
+    if(d[index].energy && d[index].energy>0 && d[index].power && d[index].power > 0) {
       if((d[index].energy-start) > 0) {
         return d[index].energy;
       } else {
@@ -136,7 +136,8 @@ function checkDataReset(d) {
     p.forEach(function(e,i){
       if(!gotFirst) {
         initial = e.energy;
-        if(initial) {
+        let inpower = e.power;
+        if(initial && inpower && inpower > 0) {
           gotFirst = true;
         }
       }
@@ -164,7 +165,7 @@ function checkDataReset(d) {
       }
       if(i == (p.length-1)) {
         let end = getDefinedValues(p,i,initial,-1);
-        //console.log("End: ", end," Initial: ",initial);
+        console.log("End: ", end," Initial: ",initial);
         let db = (end-initial)/1000000;
         db = isNaN(db) ? 0 : db;
         o[c].push(db);
@@ -275,7 +276,7 @@ exports.handler = function(event,context,cb) {
               hourEnergy = getHourEnergy(data.Items);
               updatedAt = data.Items[reslength-1].timestamp || 0;
             }
-            putDataToDB(hourEnergy,device,st,updatedAt,reslength);
+            //putDataToDB(hourEnergy,device,st,updatedAt,reslength);
             var extraObj = {
               device: device,
               hour: st

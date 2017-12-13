@@ -101,7 +101,7 @@ exports.handler = function(event,context,cb) {
         cc = "TOTAL";
       }
     }
-
+    console.log("Device:",device," ST:",st);
     const params = {
           "TableName": tableName,
           "KeyConditionExpression" : 'device = :device and begins_with(dhr,:st)',
