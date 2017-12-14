@@ -15,6 +15,8 @@ const device = process.env.DEVICE_ID;
 const columnLength = process.env.COL_LENGTH || 20;
 const currLogLevel = process.env.LOG_LEVEL !== null ? process.env.LOG_LEVEL : 'error';
 
+const powerLimit = 5;
+
 const logLevels = {error: 4, warn: 3, info: 2, verbose: 1, debug: 0};
 function bklog(logLevel, statement) {
     if(logLevels[logLevel] >= logLevels[currLogLevel] ) {
@@ -49,8 +51,10 @@ function putDataToDB(en,device,hour,updatedAt,count){
 function getDefinedValues(d,index,initial,order){
   let start = initial;
   if(index>0){
-    if(d[index].energy && d[index].energy>0 && d[index].power && d[index].power > 0) {
-      if((d[index].energy-start) > 0) {
+    // Power threshold
+    if(d[index].energy && d[index].energy>0 && d[index].power && d[index].power > powerLimit) {
+      if((d[index].energy-start) > 0 && (d[index].energy-start) < 2.4) {
+        console.log("End Defined ticks:",d[index].ticks);
         return d[index].energy;
       } else {
         return getDefinedValues(d,(index+order),start,order);
@@ -78,7 +82,7 @@ function checkDataReset(d) {
     if(!gotFirst) {
       initialEnergy = energy;
       let initialPower = power;
-      if(initialEnergy && initialPower && initialPower > 0) {
+      if(initialEnergy && initialEnergy > 0 && initialPower && initialPower > powerLimit) {
         gotFirst = true;
         console.log("Initial Energy:",initialEnergy,ticks,i);
       }
@@ -209,7 +213,7 @@ exports.handler = function(event,context,cb) {
           e6: c6.hourEnergy,
         }
         let reslength = allData[0].Items.length;
-        console.log("Final Output:",c1,c2,c3,c4,c5,c6);
+        // console.log("Final Output:",c1,c2,c3,c4,c5,c6);
         putDataToDB(hourEnergy,device,st,updatedAt,reslength);
     })
     .catch(function(err){

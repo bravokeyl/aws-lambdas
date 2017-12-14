@@ -1,5 +1,5 @@
 #!/bin/bash
-for number in 08
+for number in 11
 do
   dat='2017/12/'$number
   echo $dat
