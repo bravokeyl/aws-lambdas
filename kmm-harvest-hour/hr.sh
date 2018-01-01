@@ -1,7 +1,7 @@
 #!/bin/bash
-for number in {00..23}
+for number in 11
 do
-  dat='2017/12/13/'$number
+  dat='2017/12/11/'$number
   echo $dat
   pay='{"params":{"querystring":{"dhr":"';
   a='"}}}';

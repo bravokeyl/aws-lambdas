@@ -10,12 +10,24 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 
 const tableName = process.env.SRC_DDB;
 const putTableName = process.env.DST_DDB;
-const srcBucket = process.env.S3_SRC_BUCKET;
-const dstBucket = process.env.S3_DST_BUCKET;
 const todayDate = moment().format('YYYY/MM/DD');
-const device = process.env.DEVICE_ID; //"esp8266_1ACD99";
+const device = process.env.DEVICE_ID;
 const columnLength = process.env.COL_LENGTH || 20;
 const currLogLevel = process.env.LOG_LEVEL !== null ? process.env.LOG_LEVEL : 'error';
+
+const voltageLowerLimit = 100;
+const voltageUpperLimit = 400;
+const powerLowerLimit = 5;
+const currentLowerLimit = 0.1;
+
+let dataAfterReset = {
+  "1": [0],
+  "2": [0],
+  "3": [0],
+  "4": [0],
+  "5": [0],
+  "6": [0]
+};
 
 const logLevels = {error: 4, warn: 3, info: 2, verbose: 1, debug: 0};
 function bklog(logLevel, statement) {
@@ -30,86 +42,31 @@ function putDataToDB(en,device,hour,updatedAt,count){
         Item:{
           "device": device,
           "dhr": hour,
-          "c1": en[1],
-          "c2": en[2],
-          "c3": en[3],
-          "c4": en[4],
-          "c5": en[5],
-          "c6": en[6],
+          "c1": en.e1,
+          "c2": en.e2,
+          "c3": en.e3,
+          "c4": en.e4,
+          "c5": en.e5,
+          "c6": en.e6,
           "updatedAt": moment().utcOffset("+05:30").format('x'),
           "lastReported": updatedAt,
           "count": count,
         }
     };
   docClient.put(params, function(err, res) {
-      if (err) {
-        console.error("Unable to put. Error JSON:", JSON.stringify(err, null, 2));
-        console.log("Errored Event",en);
-      }
+    if (err) {
+      console.error("Unable to put. Error JSON:", JSON.stringify(err, null, 2));
+      console.log("Errored Event",en);
+    }
   });
-}
-function channelSplit(d,sep){
-  return d.split(sep);
-}
-function extractChannels(d) {
-  let darr = channelSplit(d.data,'z\n');
-  if(darr.length != 7) {
-    bklog("warn","Channels length not equal to 6, length is: " + (darr.length-1));
-    bklog("info","Check this Data: "+d.data);
-  }
-  return darr;
-}
-function singleChannel(data) {
-  let d = data.split(',');
-  let c,pow,en,v,irms,ticks;
-  data = [];
-  let c1 = [];
-  if( d.length != columnLength ) {
-    bklog("warn","Channel column length not equal to 20, length is: "+d.length);
-    bklog("info","Check this Data: "+d);
-  }
-  if(d.length>0 && (d.length == columnLength)) {
-    d.forEach((p,j) => {
-      let fc = p.charAt(0);
-      // Discard all other data except required
-      switch (fc) {
-        case 'e':
-          en = p.slice(1);
-          break;
-        case 'p':
-          pow = p.slice(1);
-          break;
-        case 'v':
-          v = p.slice(1);
-          break;
-        case 'i':
-          irms = p.slice(1);
-          break;
-        case 'c':
-          c = p.slice(1);
-          break;
-        case 'b':
-          ticks = p.slice(2);
-          break;
-        default:
-      }
-    });
-    data = {
-      "channel": c,
-      "energy": en,
-      "power": pow,
-      "current": irms,
-      "voltage": v,
-      "ticks": ticks
-    };
-  }
-  return data;
 }
 function getDefinedValues(d,index,initial,order){
   let start = initial;
   if(index>0){
-    if(d[index].energy && d[index].energy>0 && d[index].power && d[index].power > 0) {
-      if((d[index].energy-start) > 0) {
+    // Power threshold
+    if(d[index].energy && d[index].energy>0 && d[index].power && d[index].power > powerLowerLimit) {
+      if((d[index].energy-start) > 0 && (d[index].energy-start) < 2.4) {
+        console.log("End Defined ticks:",d[index].ticks);
         return d[index].energy;
       } else {
         return getDefinedValues(d,(index+order),start,order);
@@ -119,96 +76,191 @@ function getDefinedValues(d,index,initial,order){
     }
   }
 }
+function checkData(r){
+  if( isNaN(Number(r)) ) {
+    return false;
+  }
+  if(r<0) {
+    return false;
+  }
+  return true;
+}
+function checkVoltage(r) {
+  if(voltageLowerLimit < r.voltage < voltageUpperLimit) {
+    return true;
+  }
+  return false;
+}
+function checkPower(r) {
+  if(r.power > powerLowerLimit) {
+    return true;
+  }
+  return false;
+}
+function checkCurrent(r) {
+  if(r.current >= currentLowerLimit) {
+    return true;
+  }
+  return false;
+}
 function checkDataReset(d) {
-  let o = {
-    "1": [],
-    "2": [],
-    "3": [],
-    "4": [],
-    "5": [],
-    "6": [],
-  };
-  let split = [];
-  for(let c=1;c<7;c++){
-    let p = d[c];
-    let gotFirst = false;
-    let initial = 0;
-    p.forEach(function(e,i){
-      if(!gotFirst) {
-        initial = e.energy;
-        let inpower = e.power;
-        if(initial && inpower && inpower > 0) {
-          gotFirst = true;
-        }
+  let gotFirst = false;
+  let initialEnergy = 0;
+  let o = [];
+  d.forEach(function(e,i){
+    let {energy,power,voltage,current,timestamp,ticks} = e;
+    if(!gotFirst) {
+      initialEnergy = energy;
+      let initialPower = power;
+      if(initialEnergy && initialEnergy > 0 && initialPower && initialPower > powerLowerLimit) {
+        gotFirst = true;
+        console.log("Initial Energy:",initialEnergy,ticks,i);
       }
-      if(i>0){
-        if(e.ticks){
-          let prev = p[i-1].ticks;
-          let next = e.ticks;
-          if(!isNaN(Number(prev)) && !isNaN(Number(next))){
-            if(next-prev < 0){
-              console.log("Reset Happened",e,p[i-1]);
-              let hourEnergy = p[i-1].energy-initial;
-
-              if(hourEnergy>0){
-                let db = hourEnergy/1000000;
-                o[c].push(db);
-                if(e.energy){
-                  initial = e.energy;
-                } else {
-                  gotFirst = false;
-                }
-              }
+    }
+    if(i>0){
+      if(ticks){
+        let prev = d[i-1].ticks;
+        let next = ticks;
+        if(!isNaN(Number(prev)) && !isNaN(Number(next))){
+          if(next-prev < 0){
+            console.log("Reset Happened",initialEnergy,d[i-1].energy);
+            let hourEnergy = parseFloat(d[i-1].energy-initialEnergy).toFixed(4);
+            console.log("Number",hourEnergy);
+            if(hourEnergy>0){
+              let db = Number(hourEnergy);
+              o.push(db);
+              gotFirst = false;
             }
           }
         }
       }
-      if(i == (p.length-1)) {
-        let end = getDefinedValues(p,i,initial,-1);
-        console.log("End: ", end," Initial: ",initial);
-        let db = (end-initial)/1000000;
-        db = isNaN(db) ? 0 : db;
-        o[c].push(db);
-      }
-    });
-  }
-  return o;
-}
-function getHourEnergy(items) {
-  let channelsObj = {
-    "1": [],
-    "2": [],
-    "3": [],
-    "4": [],
-    "5": [],
-    "6": [],
-  };
-  let hourEnergy = {
-    "1": 0,
-    "2": 0,
-    "3": 0,
-    "4": 0,
-    "5": 0,
-    "6": 0,
-  };
-
-  items.forEach(function(e,i){
-    let channels = extractChannels(e);
-    channels.forEach(function(e,i){
-      if(e.length>0){
-        let channel = singleChannel(e);
-        if(channelsObj[channel.channel]) {
-          channelsObj[channel.channel].push(channel);
-        }
-      }
-    });
-    if(i>0){
-      let diff = items[i-1].timestamp - items[i].timestamp;
+    }
+    if(i == (d.length-1)) {
+      let end = getDefinedValues(d,i,initialEnergy,-1);
+      console.log("End: ", end," Initial: ",initialEnergy);
+      let db = (end-initialEnergy);
+      db = isNaN(db) ? 0 : Number(parseFloat(db).toFixed(4));
+      o.push(db);
     }
   });
-  let he = checkDataReset(channelsObj);
+  return o;
+}
+function checkReset(d,c){
+  let co = 1;
+  d.forEach((e,i)=>{
+    let {energy,channel,power,voltage,current,timestamp,ticks} = e;
+    if(i> 0 && ticks){
+      let prev = d[i-1].ticks;
+      let next = ticks;
+      if(!isNaN(Number(prev)) && !isNaN(Number(next))){
+        if(next-prev < 0){
+          console.log("Reset happened - last energy value: ",d[i-1].energy);
+          if(dataAfterReset[channel]){
+            dataAfterReset[channel].push((i-1));
+          } else {
+            bklog("error","Wrong channel or no channel");
+          }
+        }
+        if(co == d.length){
+          dataAfterReset[channel].push(d.length);
+        }
+      }
+    }
+    co++;
+  });
+}
+function hourEnergy(d,cdata) {
+  let gotInitialEnergy = false;
+  let initialEnergy = 0;
+  let finalEnergy = 0;
+  let o = [];
+  // cdata.push(d.length);
+  console.log("CDTDT",cdata);
+  let clength = cdata.length;
+  for(let ci=1;ci<=clength;ci++){
+    let si = cdata[ci-1];
+    if(si>0) {
+      si = si+1;
+    }
+    for(let i=si;i<=cdata[ci];i++){
+      let e = d[i];
+      if(e){
+        let {energy,channel,power,voltage,current,timestamp,ticks} = e;
+        //Check voltage,power,current limits
+        if(checkVoltage(e) && checkPower(e) && checkCurrent(e)){
+          if(!gotInitialEnergy) {
+            initialEnergy = energy;
+            gotInitialEnergy = true;
+            bklog("error","Initial Energy: "+JSON.stringify(energy)+" : ticks : "+JSON.stringify(ticks));
+          }
+          finalEnergy = energy;
+        } else {
+          bklog("debug","Didn't pass checks for channel:"+JSON.stringify(channel)+" at "+JSON.stringify(timestamp));
+        }
+        // console.log(i,cdata[ci],ci);
+        if(i== (cdata[ci]-1) ){
+          console.log("MF:",finalEnergy,"I:",initialEnergy);
+          o.push(Number(finalEnergy-initialEnergy));
+        }
+        if(i== (cdata[ci]) ){
+          console.log("FF:",finalEnergy,"I:",initialEnergy);
+          o.push(Number(finalEnergy-initialEnergy));
+        }
+      } else {
+        console.log(si,cdata[ci],"DKDKDKKD",i,e);
+      }
+    }
+  }
+
+  return o;
+}
+function getHourEnergy(items,c) {
+  let he = 0;
+  // let he = checkDataReset(items);
+  checkReset(items,c);
+  he = hourEnergy(items,dataAfterReset[c]);
   return he;
 }
+
+function processData(data,c) {
+    let updatedAt = 0;
+    let reslength = 0;
+    let hourEnergy = 0;
+    console.log("Channel: ",c);
+    if(data.Items){
+      reslength = data.Items.length;
+      console.log("Length: ",reslength);
+    }
+    if( reslength > 0) {
+      hourEnergy = getHourEnergy(data.Items,c);
+      console.log("hourEnergy",hourEnergy,"Channel:",c)
+      updatedAt = data.Items[reslength-1].timestamp || 0;
+      console.log("updatedAt: ",updatedAt);
+    }
+    var extraObj = {
+      updatedAt: updatedAt,
+      hourEnergy: hourEnergy
+    };
+    var res = Object.assign({},extraObj);
+    return res;
+};
+
+function getChannelData(c,st,limit,cc){
+  let params = {
+    "TableName": tableName,
+    "KeyConditionExpression" : 'device = :device and begins_with(q,:st)',
+    "ExpressionAttributeValues": {
+        ":device": device+"/"+c,
+        ":st": st,
+    },
+    "ScanIndexForward": true,
+    "ReturnConsumedCapacity": cc,
+    "Limit": limit
+  };
+  let promise = docClient.query(params).promise();
+  return promise;
+}
+
 
 exports.handler = function(event,context,cb) {
     var st,lt,channel,limit,rSelect,cc,p,hk,rk,dhr;
@@ -222,7 +274,7 @@ exports.handler = function(event,context,cb) {
     } else {
       st = moment().utcOffset("+05:30").format('YYYY/MM/DD/HH');
     }
-    console.log("ST:",st);
+    console.log("Hour ST:",st);
 
     if(event.params){
       if(event.params.querystring.l){
@@ -236,54 +288,38 @@ exports.handler = function(event,context,cb) {
       }
     }
 
-    const params = {
-          "TableName": tableName,
-          "KeyConditionExpression" : 'device = :device and begins_with(q,:st)',
-          "ExpressionAttributeNames": {
-            "#d": "data",
-            "#t": "timestamp"
-          },
-          "ExpressionAttributeValues": {
-              ":device": device,
-              ":st": st,
-          },
-          "ProjectionExpression":"#t,#d",
-          "ScanIndexForward": true,
-          // "Select": rSelect,
-          "ReturnConsumedCapacity": cc,
-          "Limit": limit
-    };
-    docClient.query(params, function(err, data) {
-        if (err) {
-            console.error("Unable to read. Error JSON:", JSON.stringify(err, null, 2));
-            console.log("Errored Event",event);
-            cb(null,err);
-        } else {
-            let hourEnergy = {
-              "1": 0,
-              "2": 0,
-              "3": 0,
-              "4": 0,
-              "5": 0,
-              "6": 0,
-            };
-            let updatedAt = 0;
-            let reslength = 0;
-            if(data.Items){
-              reslength = data.Items.length;
-            }
-            if( reslength > 0) {
-              hourEnergy = getHourEnergy(data.Items);
-              updatedAt = data.Items[reslength-1].timestamp || 0;
-            }
-            //putDataToDB(hourEnergy,device,st,updatedAt,reslength);
-            var extraObj = {
-              device: device,
-              hour: st
-            };
-            var res = Object.assign({},hourEnergy,extraObj);
-            cb(null,res);
-        }
+    Promise.all([
+      getChannelData(1,st,limit,cc),
+      getChannelData(2,st,limit,cc),
+      getChannelData(3,st,limit,cc),
+      getChannelData(4,st,limit,cc),
+      getChannelData(5,st,limit,cc),
+      getChannelData(6,st,limit,cc)
+    ])
+    .then(function(allData) {
+        let edata = allData;
 
-   });
+        let c1 = processData(allData[0],1);
+        let c2 = processData(allData[1],2);
+        let c3 = processData(allData[2],3);
+        let c4 = processData(allData[3],4);
+        let c5 = processData(allData[4],5);
+        let c6 = processData(allData[5],6);
+        let updatedAt = c1.updatedAt;
+        let hourEnergy = {
+          e1: c1.hourEnergy,
+          e2: c2.hourEnergy,
+          e3: c3.hourEnergy,
+          e4: c4.hourEnergy,
+          e5: c5.hourEnergy,
+          e6: c6.hourEnergy,
+        }
+        let reslength = allData[0].Items.length;
+        console.log("Data split after reset (if any):",dataAfterReset);
+        // console.log("Final Output:",c1,c2,c3,c4,c5,c6);
+        putDataToDB(hourEnergy,device,st,updatedAt,reslength);
+    })
+    .catch(function(err){
+      console.log(err.stack);
+    });
 };

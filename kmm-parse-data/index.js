@@ -22,9 +22,14 @@ function extractChannels(data) {
 }
 function channelData(data) {
   let d = data.split(',');
-  let c,pow,en,v,irms,ticks;
+  let c,pow,en,v,irms,ticks,reactivePower,reactiveEnergy,apparentPower,apparentEnergy;
   data = [];
   let c1 = [];
+  reactivePower = d[17];
+  apparentPower = d[18];
+  reactiveEnergy = d[15];
+  apparentEnergy = d[16];
+
   if(d.length>0) {
     d.forEach((p,j) => {
       let fc = p.charAt(0);
@@ -57,7 +62,11 @@ function channelData(data) {
       "power": pow,
       "current": irms,
       "voltage": v,
-      "ticks": ticks
+      "ticks": ticks,
+      "reactivePower": reactivePower,
+      "reactiveEnergy": reactiveEnergy,
+      "apparentPower": apparentPower,
+      "apparentEnergy": apparentEnergy
     };
   }
   return data;
@@ -119,6 +128,10 @@ exports.handler = (event, context, callback) => {
               channel: cd.channel,
               energy: Number(cd.energy/1000000) || "0bk",
               power: Number(cd.power/1000) || "0bk",
+              reactivePower: Number(cd.reactivePower/1000) || "0bk",
+              reactiveEnergy: Number(cd.reactiveEnergy/1000000) || "0bk",
+              apparentPower: Number(cd.apparentPower/1000) || "0bk",
+              apparentEnergy: Number(cd.apparentEnergy/1000000) || "0bk",
               current: Number(cd.current/1000) || "0bk",
               voltage: Number(cd.voltage/1000) || "0bk",
               ticks: cd.ticks,

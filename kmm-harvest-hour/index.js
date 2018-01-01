@@ -15,7 +15,19 @@ const device = process.env.DEVICE_ID;
 const columnLength = process.env.COL_LENGTH || 20;
 const currLogLevel = process.env.LOG_LEVEL !== null ? process.env.LOG_LEVEL : 'error';
 
-const powerLimit = 5;
+const voltageLowerLimit = 100;
+const voltageUpperLimit = 400;
+const powerLowerLimit = 5;
+const currentLowerLimit = 0.1;
+
+let dataAfterReset = {
+  "1": [0],
+  "2": [0],
+  "3": [0],
+  "4": [0],
+  "5": [0],
+  "6": [0]
+};
 
 const logLevels = {error: 4, warn: 3, info: 2, verbose: 1, debug: 0};
 function bklog(logLevel, statement) {
@@ -52,7 +64,7 @@ function getDefinedValues(d,index,initial,order){
   let start = initial;
   if(index>0){
     // Power threshold
-    if(d[index].energy && d[index].energy>0 && d[index].power && d[index].power > powerLimit) {
+    if(d[index].energy && d[index].energy>0 && d[index].power && d[index].power > powerLowerLimit) {
       if((d[index].energy-start) > 0 && (d[index].energy-start) < 2.4) {
         console.log("End Defined ticks:",d[index].ticks);
         return d[index].energy;
@@ -73,6 +85,24 @@ function checkData(r){
   }
   return true;
 }
+function checkVoltage(r) {
+  if(voltageLowerLimit < r.voltage < voltageUpperLimit) {
+    return true;
+  }
+  return false;
+}
+function checkPower(r) {
+  if(r.power > powerLowerLimit) {
+    return true;
+  }
+  return false;
+}
+function checkCurrent(r) {
+  if(r.current >= currentLowerLimit) {
+    return true;
+  }
+  return false;
+}
 function checkDataReset(d) {
   let gotFirst = false;
   let initialEnergy = 0;
@@ -82,7 +112,7 @@ function checkDataReset(d) {
     if(!gotFirst) {
       initialEnergy = energy;
       let initialPower = power;
-      if(initialEnergy && initialEnergy > 0 && initialPower && initialPower > powerLimit) {
+      if(initialEnergy && initialEnergy > 0 && initialPower && initialPower > powerLowerLimit) {
         gotFirst = true;
         console.log("Initial Energy:",initialEnergy,ticks,i);
       }
@@ -115,9 +145,68 @@ function checkDataReset(d) {
   });
   return o;
 }
-function getHourEnergy(items) {
-  let hourEnergy = 0;
-  let he = checkDataReset(items);
+function checkReset(d,c){
+  d.forEach((e,i)=>{
+    let {energy,channel,power,voltage,current,timestamp,ticks} = e;
+    if(i> 0 && ticks){
+      let prev = d[i-1].ticks;
+      let next = ticks;
+      if(!isNaN(Number(prev)) && !isNaN(Number(next))){
+        if(next-prev < 0){
+          console.log("Reset happened - last energy value: ",d[i-1].energy);
+          if(dataAfterReset[channel]){
+            dataAfterReset[channel].push((i-1));
+          } else {
+            bklog("error","Wrong channel or no channel");
+          }
+        }
+      }
+    }
+  });
+}
+function hourEnergy(d,cdata) {
+  let gotInitialEnergy = false;
+  let initialEnergy = 0;
+  let finalEnergy = 0;
+  let o = [];
+  cdata.push(d.length);
+  console.log("CDTDT",cdata);
+  let clength = cdata.length;
+  for(let ci=1;ci<=clength;ci++){
+    let si = cdata[ci-1];
+    if(si>0) {
+      si = si+1;
+    }
+    for(let i=si;i<=cdata[ci];i++){
+      let e = d[i];
+      if(e){
+        let {energy,channel,power,voltage,current,timestamp,ticks} = e;
+        //Check voltage,power,current limits
+        if(checkVoltage(e) && checkPower(e) && checkCurrent(e)){
+          if(!gotInitialEnergy) {
+            initialEnergy = energy;
+            gotInitialEnergy = true;
+            bklog("error","Initial Energy: "+JSON.stringify(energy)+" : ticks : "+JSON.stringify(ticks));
+          }
+          finalEnergy = energy;
+        } else {
+          bklog("debug","Didn't pass checks for channel:"+JSON.stringify(channel)+" at "+JSON.stringify(timestamp));
+        }
+        if(i==cdata[ci]){
+          console.log("F:",finalEnergy,"I:",initialEnergy);
+          o.push(Number(finalEnergy-initialEnergy));
+        }
+      }
+    }
+  }
+
+  return o;
+}
+function getHourEnergy(items,c) {
+  let he = 0;
+  // let he = checkDataReset(items);
+  checkReset(items,c);
+  he = hourEnergy(items,dataAfterReset[c]);
   return he;
 }
 
@@ -131,7 +220,7 @@ function processData(data,c) {
       console.log("Length: ",reslength);
     }
     if( reslength > 0) {
-      hourEnergy = getHourEnergy(data.Items);
+      hourEnergy = getHourEnergy(data.Items,c);
       console.log("hourEnergy",hourEnergy,"Channel:",c)
       updatedAt = data.Items[reslength-1].timestamp || 0;
       console.log("updatedAt: ",updatedAt);
@@ -197,6 +286,7 @@ exports.handler = function(event,context,cb) {
     ])
     .then(function(allData) {
         let edata = allData;
+
         let c1 = processData(allData[0],1);
         let c2 = processData(allData[1],2);
         let c3 = processData(allData[2],3);
@@ -213,8 +303,9 @@ exports.handler = function(event,context,cb) {
           e6: c6.hourEnergy,
         }
         let reslength = allData[0].Items.length;
+        console.log("Data split after reset (if any):",dataAfterReset);
         // console.log("Final Output:",c1,c2,c3,c4,c5,c6);
-        putDataToDB(hourEnergy,device,st,updatedAt,reslength);
+        // putDataToDB(hourEnergy,device,st,updatedAt,reslength);
     })
     .catch(function(err){
       console.log(err.stack);
