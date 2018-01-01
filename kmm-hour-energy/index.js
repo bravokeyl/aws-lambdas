@@ -222,6 +222,7 @@ function getHourEnergy(items,c) {
   let he = 0;
   // let he = checkDataReset(items);
   let dar = checkReset(items,c);
+  console.log("RESET ARR",dar,c);
   he = hourEnergy(items,dar);
   return he;
 }
@@ -335,7 +336,7 @@ exports.handler = function(event,context,cb) {
           e6: c6.hourEnergy,
         }
         let reslength = allData[0].Items.length;
-        console.log("Data split after reset (if any):",dataAfterReset);
+        // console.log("Data split after reset (if any):",dataAfterReset);
         // console.log("Final Output:",c1,c2,c3,c4,c5,c6);
         putDataToDB(hourEnergy,device,st,updatedAt,reslength);
     })
