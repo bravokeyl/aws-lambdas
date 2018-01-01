@@ -36,6 +36,12 @@ function bklog(logLevel, statement) {
     }
 }
 
+function isSunHour(hr){
+  if(8<Number(hr) && Number(hr)<17) {
+    return true;
+  }
+  return false;
+}
 function putDataToDB(en,device,hour,updatedAt,count){
   var params = {
         TableName : putTableName,
@@ -146,7 +152,7 @@ function checkDataReset(d) {
   return o;
 }
 function checkReset(d,c){
-  let co = 1;
+  let dar = [0];
   d.forEach((e,i)=>{
     let {energy,channel,power,voltage,current,timestamp,ticks} = e;
     if(i> 0 && ticks){
@@ -155,34 +161,32 @@ function checkReset(d,c){
       if(!isNaN(Number(prev)) && !isNaN(Number(next))){
         if(next-prev < 0){
           console.log("Reset happened - last energy value: ",d[i-1].energy);
+          dar.push(i-1);
           if(dataAfterReset[channel]){
             dataAfterReset[channel].push((i-1));
           } else {
             bklog("error","Wrong channel or no channel");
           }
         }
-        if(co == d.length){
-          dataAfterReset[channel].push(d.length);
-        }
       }
     }
-    co++;
   });
+  dar.push(d.length);
+  return dar;
 }
-function hourEnergy(d,cdata) {
+function hourEnergy(d,c) {
+  let cdata = c;
   let gotInitialEnergy = false;
   let initialEnergy = 0;
   let finalEnergy = 0;
   let o = [];
-  // cdata.push(d.length);
-  console.log("CDTDT",cdata);
   let clength = cdata.length;
   for(let ci=1;ci<=clength;ci++){
     let si = cdata[ci-1];
     if(si>0) {
       si = si+1;
     }
-    for(let i=si;i<=cdata[ci];i++){
+    for(let i=si;i<cdata[ci];i++){
       let e = d[i];
       if(e){
         let {energy,channel,power,voltage,current,timestamp,ticks} = e;
@@ -197,17 +201,17 @@ function hourEnergy(d,cdata) {
         } else {
           bklog("debug","Didn't pass checks for channel:"+JSON.stringify(channel)+" at "+JSON.stringify(timestamp));
         }
-        // console.log(i,cdata[ci],ci);
+
         if(i== (cdata[ci]-1) ){
           console.log("MF:",finalEnergy,"I:",initialEnergy);
-          o.push(Number(finalEnergy-initialEnergy));
+          o.push(Number(parseFloat(finalEnergy-initialEnergy).toFixed(4)));
         }
-        if(i== (cdata[ci]) ){
-          console.log("FF:",finalEnergy,"I:",initialEnergy);
-          o.push(Number(finalEnergy-initialEnergy));
-        }
+        // if(i== (cdata[ci]) ){
+        //   console.log("FF:",finalEnergy,"I:",initialEnergy);
+        //   o.push(Number(parseFloat(finalEnergy-initialEnergy).toFixed(4)));
+        // }
       } else {
-        console.log(si,cdata[ci],"DKDKDKKD",i,e);
+        // console.log(si,cdata[ci],"DKDKDKKD",i,e);
       }
     }
   }
@@ -217,15 +221,15 @@ function hourEnergy(d,cdata) {
 function getHourEnergy(items,c) {
   let he = 0;
   // let he = checkDataReset(items);
-  checkReset(items,c);
-  he = hourEnergy(items,dataAfterReset[c]);
+  let dar = checkReset(items,c);
+  he = hourEnergy(items,dar);
   return he;
 }
 
 function processData(data,c) {
     let updatedAt = 0;
     let reslength = 0;
-    let hourEnergy = 0;
+    let hourEnergy = [0];
     console.log("Channel: ",c);
     if(data.Items){
       reslength = data.Items.length;
@@ -287,25 +291,41 @@ exports.handler = function(event,context,cb) {
         cc = "TOTAL";
       }
     }
-
-    Promise.all([
-      getChannelData(1,st,limit,cc),
+    let loadArr = [
       getChannelData(2,st,limit,cc),
       getChannelData(3,st,limit,cc),
-      getChannelData(4,st,limit,cc),
+      getChannelData(4,st,limit,cc)
+    ];
+    let solarArr = [
+      getChannelData(1,st,limit,cc),
       getChannelData(5,st,limit,cc),
       getChannelData(6,st,limit,cc)
-    ])
+    ];
+    let promisesArr = loadArr;
+    let checkhr = st.split('/').reverse();
+    if(isSunHour(checkhr[0])){
+      promisesArr = loadArr.concat(solarArr);
+    }
+    Promise.all(promisesArr)
     .then(function(allData) {
         let edata = allData;
+        let c1,c5,c6;
+        let c2 = processData(allData[0],2);
+        let c3 = processData(allData[1],3);
+        let c4 = processData(allData[2],4);
 
-        let c1 = processData(allData[0],1);
-        let c2 = processData(allData[1],2);
-        let c3 = processData(allData[2],3);
-        let c4 = processData(allData[3],4);
-        let c5 = processData(allData[4],5);
-        let c6 = processData(allData[5],6);
-        let updatedAt = c1.updatedAt;
+        if(isSunHour(checkhr[0])){
+          console.log("A sun hour")
+          c1 = processData(allData[3],1);
+          c5 = processData(allData[4],5);
+          c6 = processData(allData[5],6);
+        } else {
+          console.log("Not a sun hour")
+          c1 = c5 = c6 = {
+            hourEnergy: [0]
+          }
+        }
+        let updatedAt = c2.updatedAt;
         let hourEnergy = {
           e1: c1.hourEnergy,
           e2: c2.hourEnergy,

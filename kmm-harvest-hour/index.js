@@ -305,7 +305,7 @@ exports.handler = function(event,context,cb) {
         let reslength = allData[0].Items.length;
         console.log("Data split after reset (if any):",dataAfterReset);
         // console.log("Final Output:",c1,c2,c3,c4,c5,c6);
-        // putDataToDB(hourEnergy,device,st,updatedAt,reslength);
+        putDataToDB(hourEnergy,device,st,updatedAt,reslength);
     })
     .catch(function(err){
       console.log(err.stack);

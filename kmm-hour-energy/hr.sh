@@ -1,7 +1,7 @@
 #!/bin/bash
-for day in 25
+for day in 30
 do
-  for hour in {08..16}
+  for hour in 18
   do
     dat="2017/12/"$day"/"$hour
     echo $dat
@@ -11,7 +11,7 @@ do
     echo $b
     aws lambda invoke --function-name kmm-hour-energy --payload $b "a.json" --profile luser
     echo " "
-    read -p "Continuing in 3 Seconds...." -t 3
+    read -p "Continuing in 10 Seconds...." -t 10
     echo "Continuing ...."
   done
 done
