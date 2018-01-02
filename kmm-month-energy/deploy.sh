@@ -8,5 +8,5 @@ zip -r $filename . -x deploy.sh
 #echo "Uploading to S3..."
 #aws s3 cp $filename s3://logger-lambdas
 echo "Uploading lambda function...";
-aws lambda update-function-code --function-name kmm-month-energy --zip-file fileb://$filename
+aws lambda update-function-code --function-name kmm-month-energy --zip-file fileb://$filename --profile luser
 echo "End script"

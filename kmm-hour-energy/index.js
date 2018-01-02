@@ -42,6 +42,7 @@ function isSunHour(hr){
   }
   return false;
 }
+
 function putDataToDB(en,device,hour,updatedAt,count){
   var params = {
         TableName : putTableName,
@@ -130,7 +131,7 @@ function checkDataReset(d) {
         if(!isNaN(Number(prev)) && !isNaN(Number(next))){
           if(next-prev < 0){
             console.log("Reset Happened",initialEnergy,d[i-1].energy);
-            let hourEnergy = parseFloat(d[i-1].energy-initialEnergy).toFixed(4);
+            let hourEnergy = parseFloat(d[i-1].energy-initialEnergy).toFixed(6);
             console.log("Number",hourEnergy);
             if(hourEnergy>0){
               let db = Number(hourEnergy);
@@ -145,7 +146,7 @@ function checkDataReset(d) {
       let end = getDefinedValues(d,i,initialEnergy,-1);
       console.log("End: ", end," Initial: ",initialEnergy);
       let db = (end-initialEnergy);
-      db = isNaN(db) ? 0 : Number(parseFloat(db).toFixed(4));
+      db = isNaN(db) ? 0 : Number(parseFloat(db).toFixed(6));
       o.push(db);
     }
   });
@@ -204,7 +205,7 @@ function hourEnergy(d,c) {
 
         if(i== (cdata[ci]-1) ){
           console.log("MF:",finalEnergy,"I:",initialEnergy);
-          o.push(Number(parseFloat(finalEnergy-initialEnergy).toFixed(4)));
+          o.push(Number(parseFloat(finalEnergy-initialEnergy).toFixed(6)));
         }
         // if(i== (cdata[ci]) ){
         //   console.log("FF:",finalEnergy,"I:",initialEnergy);

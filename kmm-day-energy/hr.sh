@@ -1,8 +1,8 @@
 #!/bin/bash
 
-for number in 30
+for number in 02
 do
-  dat='2017/12/'$number
+  dat='2018/01/'$number
   echo $dat
   pay='{"params":{"querystring":{"dhr":"';
   a='"}}}';
@@ -10,7 +10,7 @@ do
   echo $b
   aws lambda invoke --function-name kmm-day-energy --payload $b "a.json" --profile luser
   echo " "
-  read -p "Continuing in 2 Seconds...." -t 2
+  read -p "Continuing in 10 Seconds...." -t 10
   echo "Continuing ...."
 done
 exit 0

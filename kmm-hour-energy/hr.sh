@@ -1,7 +1,7 @@
 #!/bin/bash
-for day in 30
+for day in 31
 do
-  for hour in 12
+  for hour in 11
   do
     dat="2017/12/"$day"/"$hour
     echo $dat

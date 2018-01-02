@@ -58,12 +58,12 @@ function sumObjectsByKey(arr) {
       "c1":0
     };
   arr.map((e,i)=>{
-    // keys["c1"] += sumChannelEnergy(e["c1"]);
+    keys["c1"] += sumChannelEnergy(e["c1"]);
     keys["c2"] += sumChannelEnergy(e["c2"]);
     keys["c3"] += sumChannelEnergy(e["c3"]);
     keys["c4"] += sumChannelEnergy(e["c4"]);
-    // keys["c5"] += sumChannelEnergy(e["c5"]);
-    // keys["c6"] += sumChannelEnergy(e["c6"]);
+    keys["c5"] += sumChannelEnergy(e["c5"]);
+    keys["c6"] += sumChannelEnergy(e["c6"]);
   });
   // console.log(keys,"SUMMED")
   return keys;
