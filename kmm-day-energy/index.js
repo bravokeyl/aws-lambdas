@@ -10,22 +10,24 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 
 const tableName = process.env.SRC_DDB;
 const putTableName = process.env.DST_DDB;
-const srcBucket = process.env.S3_SRC_BUCKET;
-const dstBucket = process.env.S3_DST_BUCKET;
 const todayDate = moment().format('YYYY/MM/DD');
 const device = process.env.DEVICE_ID; //"esp8266_1ACD99";
-function putDataToDB(en,device,date){
+function putDataToDB(en,device,date,lastReported){
   var params = {
         TableName : putTableName,
         Item:{
           "device": device,
           "ddt": date,
-          "c1": Number(parseFloat(en["c1"]).toFixed(2)),
-          "c2": Number(parseFloat(en["c2"]).toFixed(2)),
-          "c3": Number(parseFloat(en["c3"]).toFixed(2)),
-          "c4": Number(parseFloat(en["c4"]).toFixed(2)),
-          "c5": Number(parseFloat(en["c5"]).toFixed(2)),
-          "c6": Number(parseFloat(en["c6"]).toFixed(2)),
+          "c1": Number(parseFloat(en["c1"]).toFixed(3)),
+          "c2": Number(parseFloat(en["c2"]).toFixed(3)),
+          "c3": Number(parseFloat(en["c3"]).toFixed(3)),
+          "c4": Number(parseFloat(en["c4"]).toFixed(3)),
+          "c5": Number(parseFloat(en["c5"]).toFixed(3)),
+          "c6": Number(parseFloat(en["c6"]).toFixed(3)),
+          "solar": Number(parseFloat(en["c1"]+en["c5"]+en["c6"]).toFixed(3)),
+          "load": Number(parseFloat(en["c2"]+en["c3"]+en["c4"]).toFixed(3)),
+          "updatedAt": moment().utcOffset("+05:30").format('x'),
+          "lastReported": lastReported
         }
     };
   docClient.put(params, function(err, res) {
@@ -43,7 +45,7 @@ function enCheck(e,c) {
 
 function sumChannelEnergy(arr){
   if(Array.isArray(arr)) {
-    let redArr = arr.reduce((a,b)=> { return a+b; });
+    let redArr = arr.reduce((a,b)=> { return a+b; },0);
     return redArr;
   } else {
     console.log("Not an array",arr);
@@ -78,7 +80,7 @@ function energySumByChannel(data){
 }
 exports.handler = function(event,context,cb) {
     var st,lt,channel,limit,rSelect,cc,p,hk,rk,dhr;
-    limit = 1000;
+    limit = 24;
     rSelect = "ALL_ATTRIBUTES";
     cc = "NONE";
     channel = "1";
@@ -86,7 +88,7 @@ exports.handler = function(event,context,cb) {
       st = event.params.querystring.dhr;
       console.log("Date Query String",event.params.querystring.dhr);
     } else {
-      st = moment().utcOffset("+05:30").subtract(1, "days").format('YYYY/MM/DD');
+      st = moment().utcOffset("+05:30").format('YYYY/MM/DD');
     }
     console.log("ST:",st);
 
@@ -126,19 +128,18 @@ exports.handler = function(event,context,cb) {
               "5": 0,
               "6": 0,
             };
+            var res = {};
             if(data.Items.length > 0) {
-              // console.log(data.Items);
+              let lastReported = data.Items[0].lastReported || 0;
               dayEnergy = energySumByChannel(data.Items);
-              putDataToDB(dayEnergy,device,st);
+              putDataToDB(dayEnergy,device,st,lastReported);
             }
-
             var extraObj = {
               device: device,
-              hour: st
+              day: st
             };
-            var res = Object.assign({},dayEnergy,extraObj)
+            res = Object.assign({},dayEnergy,extraObj);
             cb(null,res);
         }
-
    });
 };
