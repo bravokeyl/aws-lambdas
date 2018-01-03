@@ -12,7 +12,7 @@ const tableName = process.env.SRC_DDB;
 const putTableName = process.env.DST_DDB;
 const todayDate = moment().format('YYYY/MM/DD');
 const device = process.env.DEVICE_ID; //"esp8266_1ACD99";
-function putDataToDB(en,device,date,lastReported){
+function putDataToDB(en,device,date,lastReported,hrcount,count){
   var params = {
         TableName : putTableName,
         Item:{
@@ -24,8 +24,12 @@ function putDataToDB(en,device,date,lastReported){
           "c4": Number(parseFloat(en["c4"]).toFixed(3)),
           "c5": Number(parseFloat(en["c5"]).toFixed(3)),
           "c6": Number(parseFloat(en["c6"]).toFixed(3)),
+          "load": Number(parseFloat(en["c2"]+en["c4"]+en["c6"]).toFixed(3)),
+          "solar": Number(parseFloat(en["c1"]+en["c3"]+en["c5"]).toFixed(3)),
           "updatedAt": moment().utcOffset("+05:30").format('x'),
-          "lastReported": lastReported
+          "lastReported": lastReported,
+          "hrcount": hrcount,
+          "count": count
         }
     };
   docClient.put(params, function(err, res) {
@@ -127,10 +131,11 @@ exports.handler = function(event,context,cb) {
               "6": 0,
             };
             var res = {};
-            if(data.Items.length > 0) {
-              let lastReported = data.Items[0].lastReported || 0;
+            let resCount = data.Items.length;
+            if(resCount > 0) {
+              let lastReported = data.Items[0].lastReported || "NA";
               dayEnergy = energySumByChannel(data.Items);
-              putDataToDB(dayEnergy,device,st,lastReported);
+              putDataToDB(dayEnergy,device,st,lastReported,resCount,data.Items[0].count || "NA");
             }
             var extraObj = {
               device: device,
