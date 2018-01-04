@@ -187,6 +187,7 @@ function hourEnergy(d,c) {
     if(si>0) {
       si = si+1;
     }
+    gotInitialEnergy = false;
     for(let i=si;i<cdata[ci];i++){
       let e = d[i];
       if(e){
@@ -196,23 +197,18 @@ function hourEnergy(d,c) {
           if(!gotInitialEnergy) {
             initialEnergy = energy;
             gotInitialEnergy = true;
-            bklog("error","Initial Energy: "+JSON.stringify(energy)+" : ticks : "+JSON.stringify(ticks));
+            bklog("error","Initial Energy: "+JSON.stringify(energy)+" : ticks : "+JSON.stringify(ticks)+": final energy :"+JSON.stringify(finalEnergy));
           }
           finalEnergy = energy;
+          o[ci-1] = Number(parseFloat(finalEnergy-initialEnergy).toFixed(6));
         } else {
           bklog("debug","Didn't pass checks for channel:"+JSON.stringify(channel)+" at "+JSON.stringify(timestamp));
         }
-
-        if(i== (cdata[ci]-1) ){
-          console.log("MF:",finalEnergy,"I:",initialEnergy);
-          o.push(Number(parseFloat(finalEnergy-initialEnergy).toFixed(6)));
-        }
-        // if(i== (cdata[ci]) ){
-        //   console.log("FF:",finalEnergy,"I:",initialEnergy);
-        //   o.push(Number(parseFloat(finalEnergy-initialEnergy).toFixed(4)));
-        // }
       } else {
         // console.log(si,cdata[ci],"DKDKDKKD",i,e);
+      }
+      if(i== (cdata[ci]-1) ){
+        // o.push(Number(parseFloat(finalEnergy-initialEnergy).toFixed(6)));
       }
     }
   }

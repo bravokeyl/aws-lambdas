@@ -1,9 +1,9 @@
 #!/bin/bash
-for day in 31
+for day in 04
 do
   for hour in 11
   do
-    dat="2017/12/"$day"/"$hour
+    dat="2018/01/"$day"/"$hour
     echo $dat
     pay='{"params":{"querystring":{"dhr":"';
     a='"}}}';
