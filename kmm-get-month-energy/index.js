@@ -23,7 +23,7 @@ exports.handler = function(event,context,cb) {
       stdate = event.params.querystring.ddm;
       console.log("Year Query String",stdate);
     }
-    console.log("SD:",stdate,"Limit",limit,"KeyCond",kce);
+    console.log("SD:",stdate,"Limit",limit,"KeyCond",kce, device);
 
     const params = {
           "TableName": tableName,

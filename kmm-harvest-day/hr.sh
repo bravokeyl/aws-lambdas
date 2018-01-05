@@ -1,5 +1,5 @@
 #!/bin/bash
-for number in 02
+for number in 05
 do
   dat='2018/01/'$number
   echo $dat

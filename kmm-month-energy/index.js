@@ -12,6 +12,22 @@ const tableName = process.env.SRC_DDB;
 const putTableName = process.env.DST_DDB;
 const todayDate = moment().format('YYYY/MM/DD');
 const device = process.env.DEVICE_ID; //"esp8266_1ACD99";
+function getSolar(en){
+  let oen =0;
+  oen = Number(parseFloat(en["c1"]+en["c3"]+en["c5"]).toFixed(3));
+  if(device==="esp8266_1ACD99"){
+    oen = Number(parseFloat(en["c1"]+en["c5"]+en["c6"]).toFixed(3));
+  }
+  return oen;
+}
+function getLoad(en){
+  let oen =0;
+  oen = Number(parseFloat(en["c2"]+en["c4"]+en["c6"]).toFixed(3));
+  if(device==="esp8266_1ACD99"){
+    oen = Number(parseFloat(en["c2"]+en["c3"]+en["c4"]).toFixed(3));
+  }
+  return oen;
+}
 function putDataToDB(en,device,month,lastReported){
   var params = {
         TableName : putTableName,
@@ -24,8 +40,8 @@ function putDataToDB(en,device,month,lastReported){
           "c4": Number(parseFloat(en["c4"]).toFixed(2)),
           "c5": Number(parseFloat(en["c5"]).toFixed(2)),
           "c6": Number(parseFloat(en["c6"]).toFixed(2)),
-          "solar": Number(parseFloat(en["c1"]+en["c5"]+en["c6"]).toFixed(3)),
-          "load": Number(parseFloat(en["c2"]+en["c3"]+en["c4"]).toFixed(3)),
+          "solar": getSolar(en),
+          "load": getLoad(en),
           "updatedAt": moment().utcOffset("+05:30").format('x'),
           "lastReported": lastReported || "NA"
         }

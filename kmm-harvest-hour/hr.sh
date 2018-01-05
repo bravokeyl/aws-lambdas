@@ -1,7 +1,7 @@
 #!/bin/bash
-for day in 02
+for day in 05
 do
-  for number in 02
+  for number in {16..18}
   do
     dat='2018/01/'$day'/'$number
     echo $dat
