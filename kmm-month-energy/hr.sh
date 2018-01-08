@@ -7,7 +7,7 @@ do
   a='"}}}';
   b=$pay"${dat}"$a
   echo $b
-  aws lambda invoke --function-name kmm-month-energy --payload $b "a.json" --profile luser
+  aws lambda invoke --function-name kmm-month-energy --payload $b "a.json" --profile luser --no-verify-ssl
   echo " "
   read -p "Continuing in 5 Seconds...." -t 5
   echo "Continuing ...."

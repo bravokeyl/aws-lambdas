@@ -93,7 +93,7 @@ function checkData(r){
   return true;
 }
 function checkVoltage(r) {
-  if(voltageLowerLimit < r.voltage < voltageUpperLimit) {
+  if(voltageLowerLimit < r.voltage && r.voltage < voltageUpperLimit) {
     return true;
   }
   return false;
@@ -197,6 +197,7 @@ function hourEnergy(d,c) {
           if(!gotInitialEnergy) {
             initialEnergy = energy;
             gotInitialEnergy = true;
+            console.log("Check voltage:",checkVoltage(e),ticks);
             bklog("error","Initial Energy: "+JSON.stringify(energy)+" : ticks : "+JSON.stringify(ticks));
           }
           finalEnergy = energy;

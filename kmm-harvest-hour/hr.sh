@@ -1,7 +1,7 @@
 #!/bin/bash
-for day in 05
+for day in 06
 do
-  for number in {16..18}
+  for number in {00..23}
   do
     dat='2018/01/'$day'/'$number
     echo $dat
@@ -9,7 +9,7 @@ do
     a='"}}}';
     b=$pay"${dat}"$a
     echo $b
-    aws lambda invoke --function-name kmm-harvest-hour --payload $b  "a.json" --profile luser
+    aws lambda invoke --function-name kmm-harvest-hour --payload $b  "a.json" --profile luser --no-verify-ssl
     echo " "
     read -p "Continuing in 10 Seconds...." -t 10
     echo "Continuing ...."
