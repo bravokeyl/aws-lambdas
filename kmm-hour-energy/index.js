@@ -37,7 +37,7 @@ function bklog(logLevel, statement) {
 }
 
 function isSunHour(hr){
-  if(8<Number(hr) && Number(hr)<17) {
+  if(6<Number(hr) && Number(hr)<18) {
     return true;
   }
   return false;
@@ -93,7 +93,7 @@ function checkData(r){
   return true;
 }
 function checkVoltage(r) {
-  if(voltageLowerLimit < r.voltage < voltageUpperLimit) {
+  if(voltageLowerLimit < r.voltage && r.voltage < voltageUpperLimit) {
     return true;
   }
   return false;
@@ -197,7 +197,7 @@ function hourEnergy(d,c) {
           if(!gotInitialEnergy) {
             initialEnergy = energy;
             gotInitialEnergy = true;
-            bklog("error","Initial Energy: "+JSON.stringify(energy)+" : ticks : "+JSON.stringify(ticks)+": final energy :"+JSON.stringify(finalEnergy));
+            bklog("error","Initial Energy: "+JSON.stringify(energy)+" : ticks : "+JSON.stringify(ticks));
           }
           finalEnergy = energy;
           o[ci-1] = Number(parseFloat(finalEnergy-initialEnergy).toFixed(6));
@@ -206,9 +206,6 @@ function hourEnergy(d,c) {
         }
       } else {
         // console.log(si,cdata[ci],"DKDKDKKD",i,e);
-      }
-      if(i== (cdata[ci]-1) ){
-        // o.push(Number(parseFloat(finalEnergy-initialEnergy).toFixed(6)));
       }
     }
   }
@@ -308,6 +305,9 @@ exports.handler = function(event,context,cb) {
     .then(function(allData) {
         let edata = allData;
         let c1,c5,c6;
+        c1 = c5 = c6 = {
+          hourEnergy: 0
+        };
         let c2 = processData(allData[0],2);
         let c3 = processData(allData[1],3);
         let c4 = processData(allData[2],4);
