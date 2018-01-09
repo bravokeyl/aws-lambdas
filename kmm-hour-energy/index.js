@@ -55,6 +55,12 @@ function putDataToDB(en,device,hour,updatedAt,count){
           "c4": en.e4,
           "c5": en.e5,
           "c6": en.e6,
+          "R": en.R,
+          "Y": en.Y,
+          "B": en.B,
+          "i1": en.i1,
+          "i2": en.i2,
+          "i3": en.i3,
           "updatedAt": moment().utcOffset("+05:30").format('x'),
           "lastReported": updatedAt,
           "count": count,
@@ -220,7 +226,35 @@ function getHourEnergy(items,c) {
   he = hourEnergy(items,dar);
   return he;
 }
-
+function getAppEnDefined(data,index,order,i,f){
+  let appEn = data[index].apparentEnergy;
+  if(index >= i && index <= f  ){
+    if(appEn && !isNaN(appEn) && Number(appEn) >= 0){
+      return Number(data[index].apparentEnergy);
+    }
+    else {
+      return getAppEnDefined(data,index+order,order,i,f);
+    }
+  }
+  return 0;
+}
+function appEnergy(data,channel){
+  let appEnergy = [0];
+  let len  = data.Items.length;
+  if(len){
+     let dar = checkReset(data.Items,channel);
+     let apfir,aplas;
+     for(let i=0,s=0;i<dar.length;i++){
+       if(i>0){
+         
+       }
+       apfir = getAppEnDefined(data.Items,dar[i],1,dar[i],dar[i+1]);
+       aplas = getAppEnDefined(data.Items,dar[i+1],-1,dar[i],dar[i+1]);
+       appEnergy.push(Number(parseFloat(aplas - apfir).toFixed(3)));
+     }
+  }
+  return appEnergy;
+}
 function processData(data,c) {
     let updatedAt = 0;
     let reslength = 0;
@@ -304,24 +338,32 @@ exports.handler = function(event,context,cb) {
     Promise.all(promisesArr)
     .then(function(allData) {
         let edata = allData;
-        let c1,c5,c6;
+        let c1,c5,c6,R,Y,B,i1,i2,i3;
         c1 = c5 = c6 = {
           hourEnergy: 0
         };
         let c2 = processData(allData[0],2);
         let c3 = processData(allData[1],3);
         let c4 = processData(allData[2],4);
+        R = appEnergy(allData[0],2);
+        Y = appEnergy(allData[1],3);
+        B = appEnergy(allData[2],4);
+
 
         if(isSunHour(checkhr[0])){
           console.log("A sun hour")
           c1 = processData(allData[3],1);
           c5 = processData(allData[4],5);
           c6 = processData(allData[5],6);
+          i1 = appEnergy(allData[3],1);
+          i2 = appEnergy(allData[4],5);
+          i3 = appEnergy(allData[5],6);
         } else {
           console.log("Not a sun hour")
           c1 = c5 = c6 = {
             hourEnergy: [0]
           }
+          i1 = i2 = i3 = 0;
         }
         let updatedAt = c2.updatedAt;
         let hourEnergy = {
@@ -331,6 +373,12 @@ exports.handler = function(event,context,cb) {
           e4: c4.hourEnergy,
           e5: c5.hourEnergy,
           e6: c6.hourEnergy,
+          "R": isNaN(R)? 0:R,
+          "Y": isNaN(Y)? 0:Y,
+          "B": isNaN(B)? 0:B,
+          "i1": isNaN(i1)? 0:i1,
+          "i2": isNaN(i2)? 0:i2,
+          "i3": isNaN(i3)? 0:i3,
         }
         let reslength = allData[0].Items.length;
         // console.log("Data split after reset (if any):",dataAfterReset);

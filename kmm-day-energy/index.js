@@ -26,6 +26,14 @@ function putDataToDB(en,device,date,lastReported){
           "c6": Number(parseFloat(en["c6"]).toFixed(3)),
           "solar": Number(parseFloat(en["c1"]+en["c5"]+en["c6"]).toFixed(3)),
           "load": Number(parseFloat(en["c2"]+en["c3"]+en["c4"]).toFixed(3)),
+
+          "R": Number(parseFloat(en["R"]).toFixed(3)),
+          "Y": Number(parseFloat(en["Y"]).toFixed(3)),
+          "B": Number(parseFloat(en["B"]).toFixed(3)),
+          "i1": Number(parseFloat(en["i1"]).toFixed(3)),
+          "i2": Number(parseFloat(en["i2"]).toFixed(3)),
+          "i3": Number(parseFloat(en["i3"]).toFixed(3)),
+
           "updatedAt": moment().utcOffset("+05:30").format('x'),
           "lastReported": lastReported
         }
@@ -59,7 +67,13 @@ function sumObjectsByKey(arr) {
       "c4":0,
       "c5":0,
       "c6":0,
-      "c1":0
+      "c1":0,
+      "R": 0,
+      "Y": 0,
+      "B": 0,
+      "i1": 0,
+      "i2": 0,
+      "i3": 0
     };
   arr.map((e,i)=>{
     keys["c1"] += sumChannelEnergy(e["c1"]);
@@ -68,7 +82,17 @@ function sumObjectsByKey(arr) {
     keys["c4"] += sumChannelEnergy(e["c4"]);
     keys["c5"] += sumChannelEnergy(e["c5"]);
     keys["c6"] += sumChannelEnergy(e["c6"]);
+
+    keys["R"] += (e["R"]);
+    keys["Y"] += (e["Y"]);
+    keys["B"] += (e["B"]);
+
+    keys["i1"] += (e["i1"]);
+    keys["i2"] += (e["i2"]);
+    keys["i3"] += (e["i3"]);
+
   });
+
   console.log(keys,"SUMMED")
   return keys;
 }

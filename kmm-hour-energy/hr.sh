@@ -1,7 +1,7 @@
 #!/bin/bash
-for day in 04
+for day in {01..03}
 do
-  for hour in 11
+  for hour in {00..23}
   do
     dat="2018/01/"$day"/"$hour
     echo $dat

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for number in {04..06}
+for number in {01..04}
 do
   dat='2018/01/'$number
   echo $dat
