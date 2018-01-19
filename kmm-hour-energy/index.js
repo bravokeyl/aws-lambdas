@@ -239,29 +239,40 @@ function getAppEnDefined(data,index,order,i,f){
   return 0;
 }
 function appEnergy(data,channel){
-  let appEnergy = [0];
+  let appEnergy = [];
   let len  = data.Items.length;
   if(len){
      let dar = checkReset(data.Items,channel);
-     let apfir,aplas;
+     console.log("APP EN Reset:",dar);
+     let p,c;
      for(let i=1,s=1;i<dar.length;i++,s++){
        if(i>1){
          s = s+1;
        }
-       let curr = data.Items[dar[i]].apparentEnergy;
-       let prev = data.Items[dar[s1]].apparentEnergy;
+       c = dar[i];
+       p = dar[s-1];
+       if(c == len ) {
+         c = dar[i]-1;
+         p = dar[i-1]+1;
+       }
+       // console.log("Curr:",channel,data.Items[c],c,i,dar,data.Items.length);
+       // console.log("Prev:",channel,data.Items[p],p,s-1,dar,data.Items.length);
+       let curr = data.Items[c].apparentEnergy;
+       let prev = data.Items[p].apparentEnergy;
        if( curr && prev ){
          let aen = Number(parseFloat(curr - prev).toFixed(3));
          if(!isNaN(aen)){
            appEnergy.push(aen);
          }
        }
-       // apfir = getAppEnDefined(data.Items,dar[i],1,dar[i],dar[i+1]);
-       // aplas = getAppEnDefined(data.Items,dar[i+1],-1,dar[i],dar[i+1]);
-       // appEnergy.push(Number(parseFloat(aplas - apfir).toFixed(3)));
      }
   }
-  return appEnergy;
+  console.log("APP EN:",appEnergy);
+  let appEnergyOut = 0;
+  if(appEnergy.length>1){
+    appEnergyOut = appEnergy.reduce( (prev, curr) => prev + curr );
+  }
+  return Number(parseFloat(appEnergyOut).toFixed(3));
 }
 function processData(data,c) {
     let updatedAt = 0;
