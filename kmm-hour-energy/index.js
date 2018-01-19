@@ -243,7 +243,7 @@ function appEnergy(data,channel){
   let len  = data.Items.length;
   if(len){
      let dar = checkReset(data.Items,channel);
-     console.log("APP EN Reset:",dar);
+     // console.log("APP EN Reset:",dar);
      let p,c;
      for(let i=1,s=1;i<dar.length;i++,s++){
        if(i>1){
@@ -267,9 +267,9 @@ function appEnergy(data,channel){
        }
      }
   }
-  console.log("APP EN:",appEnergy);
+  console.log("APP EN:",appEnergy,channel);
   let appEnergyOut = 0;
-  if(appEnergy.length>1){
+  if(appEnergy.length>=1){
     appEnergyOut = appEnergy.reduce( (prev, curr) => prev + curr );
   }
   return Number(parseFloat(appEnergyOut).toFixed(3));
@@ -367,7 +367,7 @@ exports.handler = function(event,context,cb) {
         R = appEnergy(allData[0],2);
         Y = appEnergy(allData[1],3);
         B = appEnergy(allData[2],4);
-
+        // console.log("R:",R,"Y:",Y,"B:",B);
 
         if(isSunHour(checkhr[0])){
           console.log("A sun hour")
@@ -402,6 +402,7 @@ exports.handler = function(event,context,cb) {
         let reslength = allData[0].Items.length;
         // console.log("Data split after reset (if any):",dataAfterReset);
         // console.log("Final Output:",c1,c2,c3,c4,c5,c6);
+        // console.log("Data to DB:",hourEnergy);
         putDataToDB(hourEnergy,device,st,updatedAt,reslength);
     })
     .catch(function(err){
