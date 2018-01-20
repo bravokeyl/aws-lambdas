@@ -14,7 +14,7 @@ const device = process.env.DEVICE_ID; //"esp8266_1ACD99";
 
 exports.handler = function(event,context,cb) {
     var st,lt,channel,limit,rSelect,cc,p,hk,rk,dhr,ddt;
-    limit = 2000;
+    limit = 720;
     rSelect = "ALL_ATTRIBUTES";
     cc = "NONE";
     channel = device+"/1";
