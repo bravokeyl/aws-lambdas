@@ -14,45 +14,38 @@ const todayDate = moment().format('YYYY/MM/DD');
 const device = process.env.DEVICE_ID; //"esp8266_1ACD99";
 
 function dmatrix( rows, cols, defaultValue){
-
   var arr = [];
-
-  // Creates all lines:
   for(var i=0; i < rows; i++){
-
-      // Creates an empty line
       arr.push([]);
-
-      // Adds cols to the empty line:
       arr[i].push( new Array(cols));
-
       for(var j=0; j < cols; j++){
-        // Initializes:
         arr[i][j] = defaultValue;
       }
   }
-
-return arr;
+  return arr;
 }
 
-
-function putDataToDB(en,device,month,lastReported){
+function putDataToDB(d,device,datetime,channel){
   var params = {
         TableName : putTableName,
-        Item:{
+        Key:{
           "device": device,
-          "timestamp": month,
-          "power": en,
-          "updatedAt": moment().utcOffset("+05:30").format('x'),
-          "lastReported": lastReported || "NA"
-        }
+          "timestamp": datetime,
+        },
+        UpdateExpression: "set c"+channel+" = :d, updatedAt = :uat, createdAt = if_not_exists(createdAt,:uat)",
+        ExpressionAttributeValues:{
+            ":d": d,
+            ":uat": moment().utcOffset("+05:30").format('x')
+        },
+        ReturnValues:"UPDATED_NEW"
     };
-  docClient.put(params, function(err, res) {
+  docClient.update(params, function(err, res) {
       if (err) {
         console.error("Unable to put. Error JSON:", JSON.stringify(err, null, 2));
       }
   });
 }
+
 const getMinuteChar = (s) => {
   let min = false;
   if(s.q){
@@ -63,6 +56,7 @@ const getMinuteChar = (s) => {
   }
   return Number(min);
 }
+
 const getHourChar = (s) => {
   let min = false;
   if(s.q){
@@ -74,53 +68,11 @@ const getHourChar = (s) => {
   return Number(min);
 }
 
-const splitDataIntoMinuteGroups = (data) => {
-  // Array(24).fill().map(()=> []);
-  let outData = dmatrix(24,60,[0]);
-  console.log(typeof outData);
-  // [...new Array(60)].map(x => [0]);
-  let prev,cur;
-  let minGroup = [];
-  data.map((e,i)=>{
-    let min = getMinuteChar(e);
-    let hour =  getHourChar(e);
-    if(min >= 0 && min < 60) {
-      // console.log(e.q,min);
-      cur = min;
-      if(i>0){
-        prev = getMinuteChar(data[i-1]);
-        if(cur === prev){
-          minGroup.push({
-            appPower: e.apparentPower,
-            power: e.power,
-            q: e.q
-          });
-        } else {
-          outData[hour][prev] = minGroup;
-          minGroup = [];
-          minGroup.push({
-            appPower: e.apparentPower,
-            power: e.power,
-            q: e.q
-          });
-        }
-      } else {
-        minGroup.push({
-          appPower: e.apparentPower,
-          power: e.power,
-          q: e.q
-        });
-      }
-    } else {
-      console.log("Malformed Minute:", e.q,min);
-    }
-  });
-  console.log(typeof outData);
-
-  return outData;
+const formatNumber = d => {
+  return isNaN(Number(d)) ? 0 : Number(d);
 }
 
-const getAveragePowerArr = items => {
+const getAveragePowerObj = items => {
   let avgPowerObj = {};
   let avgAppPower = 0;
   let avgPower = 0;
@@ -131,10 +83,10 @@ const getAveragePowerArr = items => {
     let hr  = getHourChar(item);
     let min = getMinuteChar(item);
     if((hr+"-"+min) === hrmin){
-      let nApP = Number(item.apparentPower);
-      let nP = Number(item.power);
-      avgAppPower += isNaN(nApP)? 0: nApP;
-      avgPower += isNaN(nP)? 0: nP;
+      let nApP = formatNumber(item.apparentPower);
+      let nP = formatNumber(item.power);
+      avgAppPower += nApP;
+      avgPower += nP;
       prevHrMin = (hr+"-"+min);
       count++;
     } else {
@@ -142,19 +94,20 @@ const getAveragePowerArr = items => {
         prevHrMin = (hr+"-"+min);
       } else {
         avgPowerObj[prevHrMin] = {
-          "appPower": avgAppPower/count,
-          "power": avgPower/count
+          "appPower": Number(parseFloat(avgAppPower/count).toFixed(3)) || 0,
+          "power": Number(parseFloat(avgPower/count).toFixed(3)) || 0
         }
       }
       hrmin = (hr+"-"+min);
-      avgAppPower = isNaN(Number(item.apparentPower))?0:Number(item.apparentPower);
-      avgPower = isNaN(Number(item.power))?0:Number(item.power);
+      avgAppPower = formatNumber(item.apparentPower);
+      avgPower = formatNumber(item.power);
       count = 1;
     }
   });
   console.log(avgPowerObj);
-  return [avgPowerObj];
+  return avgPowerObj;
 }
+
 exports.handler = function(event,context,cb) {
     var st,lt,channel,limit,rSelect,cc,p,hk,rk,dhr;
     limit = 5000;
@@ -170,6 +123,9 @@ exports.handler = function(event,context,cb) {
     console.log("ST:",st);
 
     if(event.params){
+      if(event.params.querystring.c){
+        channel = parseInt(event.params.querystring.c);
+      }
       if(event.params.querystring.l){
         limit = parseInt(event.params.querystring.l);
       }
@@ -182,75 +138,36 @@ exports.handler = function(event,context,cb) {
     }
 
     const params = {
-          "TableName": tableName,
-          "KeyConditionExpression" : 'device = :device and begins_with(q,:st)',
-          "ExpressionAttributeValues": {
-              ":device": device+"/1",
-              ":st": st,
-          },
-          "ScanIndexForward": false,
-          "ReturnConsumedCapacity": cc,
-          // "Limit": limit
+      "TableName": tableName,
+      "KeyConditionExpression" : 'device = :device and begins_with(q,:st)',
+      "ExpressionAttributeValues": {
+          ":device": device+"/"+channel,
+          ":st": st,
+      },
+      "ScanIndexForward": false,
+      "ReturnConsumedCapacity": cc,
+      // "Limit": limit
     };
     docClient.query(params, function(err, data) {
-        if (err) {
-            console.error("Unable to read. Error JSON:", JSON.stringify(err, null, 2));
-            cb(null,err);
-        } else {
-            let dayEnergy;
-            if(data.Items.length > 0) {
-              console.log(data.Items.length);
-              let lastReported = data.Items[0].lastReported || 0;
-              // putDataToDB(dayEnergy,device,st,lastReported);
-              //let minGroups = splitDataIntoMinuteGroups(data.Items);
-              let avgPowerArr = getAveragePowerArr(data.Items);
-              // console.log(minGroups.length);
-              // console.log(typeof minGroups);
-              // let row,col;
-              // for(row = 9;row<10;row++){
-              //   console.log(row,typeof minGroups[row]);
-              //   for(col = 0; col<60;col++){
-              //     let appPowerTotal,powerTotal;
-              //     console.log(row,col,typeof minGroups[row][col],minGroups[row][col]);
-              //     dayEnergy = minGroups[row];
-              //     appPowerTotal = minGroups[row].reduce(
-              //       function(r,o){
-              //         console.log("App",o[0],o.length)
-              //         r.sum += Number(o[0].appPower) || 0;
-              //         ++r.count
-              //         return r;
-              //       },
-              //     {sum: 0, count: 0});
-              //     powerTotal = minGroups[row].reduce(
-              //       function(r,o){
-              //         r.sum += Number(o[0].power) || 0;
-              //         ++r.count
-              //         return r;
-              //       },
-              //     {sum: 0, count: 0});
-              //     let appPowerAvg = Number(parseFloat(appPowerTotal.sum/appPowerTotal.count).toFixed(3));
-              //     let powerAvg = Number(parseFloat(powerTotal.sum/powerTotal.count).toFixed(3));
-              //     console.log("Totals:",appPowerAvg,powerAvg,minGroups[row][col][0].q || 'No Date');
-              //   }
-              // }
-              // minGroups.map((d,i)=>{
-              //   console.log(typeof d,i,d[i],d);
-              //   d.map((e,j) =>{
-              //     console.log(typeof e,e,j,d[j]);
-              //
-              //   });
-              //   // console.log("Totals:",appPowerAvg,powerAvg,e[0].q);
-              // });
-              // dayEnergy = minGroups;
-            }
+      if (err) {
+          console.error("Unable to read. Error JSON:", JSON.stringify(err, null, 2));
+          cb(null,err);
+      } else {
+          let dayEnergy;
+          if(data.Items.length > 0) {
+            console.log(data.Items.length);
+            let lastReported = data.Items[0].lastReported || 0;
+            let avgPowerArr = getAveragePowerObj(data.Items);
+            putDataToDB(avgPowerArr,device,st,channel);
+            dayEnergy = avgPowerArr;
+          }
 
-            var extraObj = {
-              device: device,
-              hour: st
-            };
-            var res = Object.assign({},dayEnergy,extraObj)
-            cb(null,dayEnergy);
-        }
-
+          var extraObj = {
+            device: device,
+            hour: st
+          };
+          var res = Object.assign({},dayEnergy,extraObj)
+          cb(null,dayEnergy);
+      }
    });
 };
