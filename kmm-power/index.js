@@ -30,7 +30,7 @@ function putDataToDB(d,device,datetime,channel){
         TableName : putTableName,
         Key:{
           "device": device,
-          "timestamp": datetime,
+          "q": datetime,
         },
         UpdateExpression: "set c"+channel+" = :d, updatedAt = :uat, createdAt = if_not_exists(createdAt,:uat)",
         ExpressionAttributeValues:{
