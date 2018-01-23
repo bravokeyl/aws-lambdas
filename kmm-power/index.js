@@ -89,6 +89,10 @@ const getAveragePowerObj = items => {
       avgPower += nP;
       prevHrMin = (hr+"-"+min);
       count++;
+      avgPowerObj[prevHrMin] = {
+        "appPower": Number(parseFloat(avgAppPower/count).toFixed(3)) || 0,
+        "power": Number(parseFloat(avgPower/count).toFixed(3)) || 0
+      }
     } else {
       if(index == 0) {
         prevHrMin = (hr+"-"+min);
