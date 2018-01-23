@@ -17,14 +17,14 @@ exports.handler = function(event,context,cb) {
     limit = 720;
     rSelect = "ALL_ATTRIBUTES";
     cc = "NONE";
-    channel = device+"/1";
-
+    channel = device;
+    console.log("Event Params:",event.params);
     if(event.params && event.params.querystring && event.params.querystring.c){
       channel = device+"/"+event.params.querystring.c;
     }
     st = moment().utcOffset("+05:30").format("YYYY/MM/DD/");
-    if(event.params && event.params.querystring && event.params.querystring.d){
-      st = moment().utcOffset("+05:30").format("YYYY/MM/DD/HH/HH-mm");
+    if(event.params && event.params.querystring && event.params.querystring.date){
+      st = moment(event.params.querystring.date,"YYYY/MM/DD/").utcOffset("+05:30").format("YYYY/MM/DD/");
     }
     if(event.params && event.params.querystring && event.params.querystring.channel){
       channel = device+"/"+event.params.querystring.channel;
@@ -45,15 +45,15 @@ exports.handler = function(event,context,cb) {
           "KeyConditionExpression" : 'device = :device and q between :st and :ed',
           "ExpressionAttributeValues": {
               ":device": channel,
-              ":st": st+"06",
-              ":ed": st+"18"
+              ":st": st+"00",
+              ":ed": st+"23"
           },
-          "ExpressionAttributeNames": {
-            "#t":"timestamp"
-          },
+          // "ExpressionAttributeNames": {
+          //   "#t":"timestamp"
+          // },
           "ScanIndexForward": true,
           "ReturnConsumedCapacity": cc,
-          "ProjectionExpression": "apparentPower,#t",
+          // "ProjectionExpression": "apparentPower,#t",
           // "Limit": limit
     };
     docClient.query(params, function(err, data) {

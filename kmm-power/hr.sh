@@ -16,7 +16,7 @@ else
   echo $d
 fi
 
-for hr in {13..15}
+for hr in 18
 do
   for c in {1,2,3,4,5,6}
   do
