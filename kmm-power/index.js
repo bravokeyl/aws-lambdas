@@ -26,13 +26,36 @@ function dmatrix( rows, cols, defaultValue){
 }
 
 function putDataToDB(d,device,datetime,channel){
+  let col = "i";
+  switch (channel) {
+    case 1:
+      col = "i1";
+      break;
+    case 2:
+      col = "R";
+      break;
+    case 3:
+      col = "i2";
+      break;
+    case 4:
+      col = "Y";
+      break;
+    case 5:
+      col = "i3";
+      break;
+    case 6:
+      col = "B";
+      break;
+    default:
+      console.log("Default switch channel");
+  }
   var params = {
         TableName : putTableName,
         Key:{
           "device": device,
           "q": datetime.toString(),
         },
-        UpdateExpression: "set c"+channel+" = :d, updatedAt = :uat, createdAt = if_not_exists(createdAt,:uat)",
+        UpdateExpression: "set "+col+" = :d, updatedAt = :uat, createdAt = if_not_exists(createdAt,:uat)",
         ExpressionAttributeValues:{
             ":d": d,
             ":uat": moment().utcOffset("+05:30").format('x')
@@ -140,6 +163,7 @@ exports.handler = function(event,context,cb) {
         cc = "TOTAL";
       }
     }
+    console.log("Device:",device);
 
     const params = {
       "TableName": tableName,
@@ -152,6 +176,7 @@ exports.handler = function(event,context,cb) {
       "ReturnConsumedCapacity": cc,
       // "Limit": limit
     };
+
     docClient.query(params, function(err, data) {
       if (err) {
           console.error("Unable to read. Error JSON:", JSON.stringify(err, null, 2));
@@ -173,5 +198,5 @@ exports.handler = function(event,context,cb) {
           var res = Object.assign({},dayEnergy,extraObj)
           cb(null,dayEnergy);
       }
-   });
+    });
 };
