@@ -35,16 +35,16 @@ function putDataToDB(d,device,datetime,channel){
       col = "R";
       break;
     case 3:
-      col = "i2";
-      break;
-    case 4:
       col = "Y";
       break;
+    case 4:
+      col = "B";
+      break;
     case 5:
-      col = "i3";
+      col = "i2";
       break;
     case 6:
-      col = "B";
+      col = "i3";
       break;
     default:
       console.log("Default switch channel");

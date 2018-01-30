@@ -227,9 +227,11 @@ function getHourEnergy(items,c) {
   return he;
 }
 function getAppEnDefined(data,index,order,i,f){
-  let appEn = data[index].apparentEnergy;
+  console.log(index,order,data[index].ticks,data[index].q);
+  let appEn = Number(data[index].apparentEnergy);
+  let appPow = Number(data[index].apparentPower);
   if(index >= i && index <= f  ){
-    if(appEn && !isNaN(appEn) && Number(appEn) >= 0){
+    if(appEn && !isNaN(appEn) && Number(appEn) >= 0 && appPow && !isNaN(appPow)){
       return Number(data[index].apparentEnergy);
     }
     else {
@@ -243,26 +245,59 @@ function appEnergy(data,channel){
   let len  = data.Items.length;
   if(len){
      let dar = checkReset(data.Items,channel);
-     // console.log("APP EN Reset:",dar);
+     console.log("APP EN Reset:",dar,"Channel:",channel);
      let p,c;
-     for(let i=1,s=1;i<dar.length;i++,s++){
-       if(i>1){
-         s = s+1;
-       }
-       c = dar[i];
-       p = dar[s-1];
-       if(c == len ) {
-         c = dar[i]-1;
-         p = dar[i-1]+1;
-       }
-       // console.log("Curr:",channel,data.Items[c],c,i,dar,data.Items.length);
-       // console.log("Prev:",channel,data.Items[p],p,s-1,dar,data.Items.length);
+     if(dar.length === 2){
+       c = dar[1]-1;
+       p = dar[0];
        let curr = data.Items[c].apparentEnergy;
        let prev = data.Items[p].apparentEnergy;
+       let curAppPower = Number(data.Items[c].apparentPower);
+       let preAppPower = Number(data.Items[p].apparentPower);
+       if(isNaN(curr) || isNaN(curAppPower)){
+         curr = getAppEnDefined(data.Items,c-1,-1,1,dar[1]-1);
+         // curr = Number(data.Items[c-1].apparentEnergy);
+         // curAppPower = Number(data.Items[c-1].apparentPower);
+       }
+       if(isNaN(prev) || isNaN(preAppPower)){
+         prev = getAppEnDefined(data.Items,p,1,1,dar[1]-1);
+         // prev = Number(data.Items[p+1].apparentEnergy);
+         // preAppPower = Number(data.Items[p+1].apparentPower);
+       }
        if( curr && prev ){
          let aen = Number(parseFloat(curr - prev).toFixed(3));
          if(!isNaN(aen)){
+           console.log("CurR En:",curr,"PreV En:",prev);
            appEnergy.push(aen);
+         }
+       }
+     } else {
+       console.log("RESET APPARENT");
+       for(let i=1,s=1;i<dar.length;i++,s++){
+         if(i>1){
+           s = s+1;
+         }
+         c = dar[i];
+         p = dar[s-1];
+         if(c == len ) {
+           c = dar[i]-1;
+           p = dar[i-1]+1;
+         }
+         // console.log("Curr:",channel,data.Items[c],c,i,dar,data.Items.length);
+         // console.log("Prev:",channel,data.Items[p],p,s-1,dar,data.Items.length);
+         let curr = data.Items[c].apparentEnergy;
+         let prev = data.Items[p].apparentEnergy;
+         let curAppPower = Number(data.Items[c].apparentPower);
+         let preAppPower = Number(data.Items[p].apparentPower);
+
+         if( curr && prev && curAppPower && preAppPower){
+           let aen = Number(parseFloat(curr - prev).toFixed(3));
+           if(!isNaN(aen)){
+             console.log("CurR En:",curr,"PreV En:",prev);
+             console.log("CurR ApPow:",curAppPower,"PreV ApPow:",preAppPower);
+             console.log("DIFFED:",data.Items[p],data.Items[c])
+             appEnergy.push(aen);
+           }
          }
        }
      }
@@ -287,7 +322,7 @@ function processData(data,c) {
       hourEnergy = getHourEnergy(data.Items,c);
       console.log("hourEnergy",hourEnergy,"Channel:",c)
       updatedAt = data.Items[reslength-1].timestamp || 0;
-      console.log("updatedAt: ",updatedAt);
+      // console.log("updatedAt: ",updatedAt);
     }
     var extraObj = {
       updatedAt: updatedAt,

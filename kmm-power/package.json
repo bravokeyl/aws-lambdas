@@ -9,6 +9,7 @@
   "author": "bravokeyl",
   "license": "ISC",
   "dependencies": {
+    "classnames": "^2.2.5",
     "moment": "^2.18.1"
   }
 }

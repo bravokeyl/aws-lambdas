@@ -24,8 +24,7 @@ function putDataToDB(en,device,date,lastReported){
           "c4": Number(parseFloat(en["c4"]).toFixed(3)),
           "c5": Number(parseFloat(en["c5"]).toFixed(3)),
           "c6": Number(parseFloat(en["c6"]).toFixed(3)),
-          "solar": Number(parseFloat(en["c1"]+en["c5"]+en["c6"]).toFixed(3)),
-          "load": Number(parseFloat(en["c2"]+en["c3"]+en["c4"]).toFixed(3)),
+
 
           "R": Number(parseFloat(en["R"]).toFixed(3)),
           "Y": Number(parseFloat(en["Y"]).toFixed(3)),
@@ -33,6 +32,9 @@ function putDataToDB(en,device,date,lastReported){
           "i1": Number(parseFloat(en["i1"]).toFixed(3)),
           "i2": Number(parseFloat(en["i2"]).toFixed(3)),
           "i3": Number(parseFloat(en["i3"]).toFixed(3)),
+
+          "solar": Number(parseFloat(en["i1"]+en["i2"]+en["i3"]).toFixed(3)),
+          "load": Number(parseFloat(en["R"]+en["Y"]+en["B"]).toFixed(3)),
 
           "updatedAt": moment().utcOffset("+05:30").format('x'),
           "lastReported": lastReported
