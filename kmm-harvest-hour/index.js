@@ -55,6 +55,12 @@ function putDataToDB(en,device,hour,updatedAt,count){
           "c4": en.e4,
           "c5": en.e5,
           "c6": en.e6,
+          "R": en.R,
+          "Y": en.Y,
+          "B": en.B,
+          "i1": en.i1,
+          "i2": en.i2,
+          "i3": en.i3,
           "updatedAt": moment().utcOffset("+05:30").format('x'),
           "lastReported": updatedAt,
           "count": count,
@@ -197,7 +203,6 @@ function hourEnergy(d,c) {
           if(!gotInitialEnergy) {
             initialEnergy = energy;
             gotInitialEnergy = true;
-            console.log("Check voltage:",checkVoltage(e),ticks);
             bklog("error","Initial Energy: "+JSON.stringify(energy)+" : ticks : "+JSON.stringify(ticks));
           }
           finalEnergy = energy;
@@ -221,7 +226,89 @@ function getHourEnergy(items,c) {
   he = hourEnergy(items,dar);
   return he;
 }
+function getAppEnDefined(data,index,order,i,f){
+  console.log(index,order,data[index].ticks,data[index].q);
+  let appEn = Number(data[index].apparentEnergy);
+  let appPow = Number(data[index].apparentPower);
+  if(index >= i && index <= f  ){
+    if(appEn && !isNaN(appEn) && Number(appEn) >= 0 && appPow && !isNaN(appPow)){
+      return Number(data[index].apparentEnergy);
+    }
+    else {
+      return getAppEnDefined(data,index+order,order,i,f);
+    }
+  }
+  return 0;
+}
+function appEnergy(data,channel){
+  let appEnergy = [];
+  let len  = data.Items.length;
+  if(len){
+     let dar = checkReset(data.Items,channel);
+     console.log("APP EN Reset:",dar,"Channel:",channel);
+     let p,c;
+     if(dar.length === 2){
+       c = dar[1]-1;
+       p = dar[0];
+       let curr = data.Items[c].apparentEnergy;
+       let prev = data.Items[p].apparentEnergy;
+       let curAppPower = Number(data.Items[c].apparentPower);
+       let preAppPower = Number(data.Items[p].apparentPower);
+       if(isNaN(curr) || isNaN(curAppPower)){
+         curr = getAppEnDefined(data.Items,c-1,-1,1,dar[1]-1);
+         // curr = Number(data.Items[c-1].apparentEnergy);
+         // curAppPower = Number(data.Items[c-1].apparentPower);
+       }
+       if(isNaN(prev) || isNaN(preAppPower)){
+         prev = getAppEnDefined(data.Items,p,1,1,dar[1]-1);
+         // prev = Number(data.Items[p+1].apparentEnergy);
+         // preAppPower = Number(data.Items[p+1].apparentPower);
+       }
+       if( curr && prev ){
+         let aen = Number(parseFloat(curr - prev).toFixed(3));
+         if(!isNaN(aen)){
+           console.log("CurR En:",curr,"PreV En:",prev);
+           appEnergy.push(aen);
+         }
+       }
+     } else {
+       console.log("RESET APPARENT");
+       for(let i=1,s=1;i<dar.length;i++,s++){
+         if(i>1){
+           s = s+1;
+         }
+         c = dar[i];
+         p = dar[s-1];
+         if(c == len ) {
+           c = dar[i]-1;
+           p = dar[i-1]+1;
+         }
+         // console.log("Curr:",channel,data.Items[c],c,i,dar,data.Items.length);
+         // console.log("Prev:",channel,data.Items[p],p,s-1,dar,data.Items.length);
+         let curr = data.Items[c].apparentEnergy;
+         let prev = data.Items[p].apparentEnergy;
+         let curAppPower = Number(data.Items[c].apparentPower);
+         let preAppPower = Number(data.Items[p].apparentPower);
 
+         if( curr && prev && curAppPower && preAppPower){
+           let aen = Number(parseFloat(curr - prev).toFixed(3));
+           if(!isNaN(aen)){
+             console.log("CurR En:",curr,"PreV En:",prev);
+             console.log("CurR ApPow:",curAppPower,"PreV ApPow:",preAppPower);
+             console.log("DIFFED:",data.Items[p],data.Items[c])
+             appEnergy.push(aen);
+           }
+         }
+       }
+     }
+  }
+  console.log("APP EN:",appEnergy,channel);
+  let appEnergyOut = 0;
+  if(appEnergy.length>=1){
+    appEnergyOut = appEnergy.reduce( (prev, curr) => prev + curr );
+  }
+  return Number(parseFloat(appEnergyOut).toFixed(3));
+}
 function processData(data,c) {
     let updatedAt = 0;
     let reslength = 0;
@@ -235,7 +322,7 @@ function processData(data,c) {
       hourEnergy = getHourEnergy(data.Items,c);
       console.log("hourEnergy",hourEnergy,"Channel:",c)
       updatedAt = data.Items[reslength-1].timestamp || 0;
-      console.log("updatedAt: ",updatedAt);
+      // console.log("updatedAt: ",updatedAt);
     }
     var extraObj = {
       updatedAt: updatedAt,
@@ -305,24 +392,32 @@ exports.handler = function(event,context,cb) {
     Promise.all(promisesArr)
     .then(function(allData) {
         let edata = allData;
-        let c1,c3,c5;
+        let c1,c3,c5,R,Y,B,i1,i2,i3;
         c1 = c3 = c5 = {
           hourEnergy: 0
         };
         let c2 = processData(allData[0],2);
         let c4 = processData(allData[1],4);
         let c6 = processData(allData[2],6);
+        R = appEnergy(allData[0],2);
+        Y = appEnergy(allData[1],4);
+        B = appEnergy(allData[2],6);
+        // console.log("R:",R,"Y:",Y,"B:",B);
 
         if(isSunHour(checkhr[0])){
           console.log("A sun hour")
           c1 = processData(allData[3],1);
           c3 = processData(allData[4],3);
           c5 = processData(allData[5],5);
+          i1 = appEnergy(allData[3],1);
+          i2 = appEnergy(allData[4],3);
+          i3 = appEnergy(allData[5],5);
         } else {
           console.log("Not a sun hour")
           c1 = c3 = c5 = {
             hourEnergy: [0]
           }
+          i1 = i2 = i3 = 0;
         }
         let updatedAt = c2.updatedAt;
         let hourEnergy = {
@@ -332,10 +427,17 @@ exports.handler = function(event,context,cb) {
           e4: c4.hourEnergy,
           e5: c5.hourEnergy,
           e6: c6.hourEnergy,
+          "R": isNaN(R)? 0:R,
+          "Y": isNaN(Y)? 0:Y,
+          "B": isNaN(B)? 0:B,
+          "i1": isNaN(i1)? 0:i1,
+          "i2": isNaN(i2)? 0:i2,
+          "i3": isNaN(i3)? 0:i3,
         }
         let reslength = allData[0].Items.length;
         // console.log("Data split after reset (if any):",dataAfterReset);
         // console.log("Final Output:",c1,c2,c3,c4,c5,c6);
+        // console.log("Data to DB:",hourEnergy);
         putDataToDB(hourEnergy,device,st,updatedAt,reslength);
     })
     .catch(function(err){
