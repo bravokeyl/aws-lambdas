@@ -1,9 +1,9 @@
 #!/bin/bash
-for day in 31
+for day in 06
 do
-  for number in {00..15}
+  for number in {00..11}
   do
-    dat='2018/01/'$day'/'$number
+    dat='2018/02/'$day'/'$number
     echo $dat
     pay='{"params":{"querystring":{"dhr":"';
     a='"}}}';
@@ -11,7 +11,7 @@ do
     echo $b
     aws lambda invoke --function-name kmm-harvest-hour --payload $b  "a.json" --profile luser --no-verify-ssl
     echo " "
-    read -p "Continuing in 10 Seconds...." -t 10
+    read -p "Continuing in 10 Seconds...." -t 3
     echo "Continuing ...."
   done
 done

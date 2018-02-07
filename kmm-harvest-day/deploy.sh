@@ -8,5 +8,5 @@ zip -r $filename . -x deploy.sh
 #echo "Uploading to S3..."
 #aws s3 cp $filename s3://logger-lambdas
 echo "Uploading lambda function...";
-aws lambda update-function-code --function-name kmm-harvest-day --zip-file fileb://$filename --profile luser
+aws lambda update-function-code --function-name kmm-harvest-day --zip-file fileb://$filename --profile luser --no-verify-ssl
 echo "End script"

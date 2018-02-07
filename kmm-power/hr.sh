@@ -16,12 +16,12 @@ else
   echo $d
 fi
 
-for hr in {10..13}
+for hr in {00..10}
 do
   for c in {1,2,3,4,5,6}
   do
     d=$(printf "%02d\n" "${1#0}");
-    dat='2018/01/'${d}
+    dat='2018/02/'${d}
     echo $dat
     pay='{"params":{"querystring":{"ddt":"';
     a='/'$hr'",';

@@ -12,24 +12,7 @@ const tableName = process.env.SRC_DDB;
 const putTableName = process.env.DST_DDB;
 const todayDate = moment().format('YYYY/MM/DD');
 const device = process.env.DEVICE_ID; //"esp8266_1ACD99";
-
-function getSolar(en){
-  let oen =0;
-  oen = Number(parseFloat(en["c1"]+en["c3"]+en["c5"]).toFixed(3));
-  if(device==="esp8266_1ACD99"){
-    oen = Number(parseFloat(en["c1"]+en["c5"]+en["c6"]).toFixed(3));
-  }
-  return oen;
-}
-function getLoad(en){
-  let oen =0;
-  oen = Number(parseFloat(en["c2"]+en["c4"]+en["c6"]).toFixed(3));
-  if(device==="esp8266_1ACD99"){
-    oen = Number(parseFloat(en["c2"]+en["c3"]+en["c4"]).toFixed(3));
-  }
-  return oen;
-}
-function putDataToDB(en,device,date,lastReported,hrcount,count){
+function putDataToDB(en,device,date,lastReported){
   var params = {
         TableName : putTableName,
         Item:{
@@ -41,12 +24,20 @@ function putDataToDB(en,device,date,lastReported,hrcount,count){
           "c4": Number(parseFloat(en["c4"]).toFixed(3)),
           "c5": Number(parseFloat(en["c5"]).toFixed(3)),
           "c6": Number(parseFloat(en["c6"]).toFixed(3)),
-          "load": getLoad(en),
-          "solar": getSolar(en),
+
+
+          "R": Number(parseFloat(en["R"]).toFixed(3)) || 0,
+          "Y": Number(parseFloat(en["Y"]).toFixed(3)) || 0,
+          "B": Number(parseFloat(en["B"]).toFixed(3)) || 0,
+          "i1": Number(parseFloat(en["i1"]).toFixed(3)) || 0,
+          "i2": Number(parseFloat(en["i2"]).toFixed(3)) || 0,
+          "i3": Number(parseFloat(en["i3"]).toFixed(3)) || 0,
+
+          "solar": Number(parseFloat(en["i1"]+en["i2"]+en["i3"]).toFixed(3)) || 0,
+          "load": Number(parseFloat(en["R"]+en["Y"]+en["B"]).toFixed(3)) || 0,
+
           "updatedAt": moment().utcOffset("+05:30").format('x'),
-          "lastReported": lastReported,
-          "hrcount": hrcount,
-          "count": count
+          "lastReported": lastReported
         }
     };
   docClient.put(params, function(err, res) {
@@ -78,7 +69,13 @@ function sumObjectsByKey(arr) {
       "c4":0,
       "c5":0,
       "c6":0,
-      "c1":0
+      "c1":0,
+      "R": 0,
+      "Y": 0,
+      "B": 0,
+      "i1": 0,
+      "i2": 0,
+      "i3": 0
     };
   arr.map((e,i)=>{
     keys["c1"] += sumChannelEnergy(e["c1"]);
@@ -87,7 +84,17 @@ function sumObjectsByKey(arr) {
     keys["c4"] += sumChannelEnergy(e["c4"]);
     keys["c5"] += sumChannelEnergy(e["c5"]);
     keys["c6"] += sumChannelEnergy(e["c6"]);
+
+    keys["R"] += (e["R"]);
+    keys["Y"] += (e["Y"]);
+    keys["B"] += (e["B"]);
+
+    keys["i1"] += (e["i1"]);
+    keys["i2"] += (e["i2"]);
+    keys["i3"] += (e["i3"]);
+
   });
+
   console.log(keys,"SUMMED")
   return keys;
 }
@@ -122,7 +129,7 @@ exports.handler = function(event,context,cb) {
         cc = "TOTAL";
       }
     }
-    console.log("Device:",device," ST:",st);
+
     const params = {
           "TableName": tableName,
           "KeyConditionExpression" : 'device = :device and begins_with(dhr,:st)',
@@ -148,11 +155,10 @@ exports.handler = function(event,context,cb) {
               "6": 0,
             };
             var res = {};
-            let resCount = data.Items.length;
-            if(resCount > 0) {
-              let lastReported = data.Items[0].lastReported || "NA";
+            if(data.Items.length > 0) {
+              let lastReported = data.Items[0].lastReported || 0;
               dayEnergy = energySumByChannel(data.Items);
-              putDataToDB(dayEnergy,device,st,lastReported,resCount,data.Items[0].count || "NA");
+              putDataToDB(dayEnergy,device,st,lastReported);
             }
             var extraObj = {
               device: device,
