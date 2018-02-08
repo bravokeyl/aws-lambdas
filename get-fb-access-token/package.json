@@ -1,0 +1,11 @@
+{
+  "name": "get-fb-access-token",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "bravokeyl",
+  "license": "MIT",
+  "dependencies": {
+    "request": "^2.83.0",
+    "request-promise": "^4.2.2"
+  }
+}
