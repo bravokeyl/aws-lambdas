@@ -3,41 +3,59 @@
 const rp = require('request-promise');
 
 const basePath = 'https://graph.facebook.com/';
-const  appId = 1652755061671557;
+const  appId = process.env.PAGE_ID;
 const postPath = basePath+'/'+appId+'/feed';
 
-const accessToken = "";
+const RohanPermanentToken = process.env.ACCESS_TOKEN;
+
+const badrPermanentToken = process.env.BADRA_ACCESS_TOKEN;
+
+const excludedKeys = [
+  "email",
+  "phone",
+  "website",
+  "address"
+];
+const isExcludedKey = (key) => {
+  return excludedKeys.includes(key.toLowerCase());
+};
+
+const filteredKeys = (keys) => {
+  return keys.filter(key => !isExcludedKey(key));
+};
 
 const constructMessage = ({params}) => {
   if(!params) return false;
   const { querystring } = params;
   if(!querystring) return false;
   let msg = "Hi Web Designer! \r\n";
-  msg += "We got a new lead for you.\r\n \r\n \r\n";
+  msg += "We got a new lead for you.\r\n \r\n";
   let keys = Object.keys(querystring);
+  keys = filteredKeys(keys);
   keys.map((e)=>{
     let val = querystring[e];
     msg += `${e} : ${val}`;
     msg += "\r\n";
   });
+  msg += "\r\nEmail/Cell: Click here to contact this lead: https://instaleads.co.za \r\n \r\n";
   msg += "\r\n \r\nRegards, \r\n";
   msg += "Rohan Rossouw \r\n";
-  msg += "https://bravokeyl.com \r\n";
+  msg += "https://instaleads.co.za \r\n";
   return msg;
 };
 
 exports.handler = (event, context, cb) => {
   let message = constructMessage(event);
   if(message){
-    const actions =  [{
-    	"name": "AWS - API Gateway",
-    	"link": "https://bravokeyl.com/"
-    }];
+    // const actions =  [{
+    // 	"name": "AWS - API Gateway",
+    // 	"link": "https://bravokeyl.com/"
+    // }];
     const rParams = {
       method: 'POST',
       uri: postPath,
       qs: {
-        access_token: accessToken,
+        access_token: RohanPermanentToken,
         message: message,
         // actions: JSON.stringify(actions),
         // place: 'Hyderabad',
